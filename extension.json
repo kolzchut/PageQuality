@@ -1,0 +1,52 @@
+{
+	"name": "PageQuality",
+	"author": "Nischayn22, WikiWorks",
+	"url": "https://www.mediawiki.org/wiki/Extension:PageQuality",
+	"description": "Monitor and improve page quality",
+	"version": "0.1",
+	"license-name": "GPL-2.0-or-later",
+	"type": "Special Page",
+	"AutoloadClasses": {
+		"PageQualityHooks": "PageQualityHooks.php",
+		"PageQualityScorer": "PageQualityScorer.php",
+		"SpecialPageQuality": "SpecialPageQuality.php"
+	},
+	"SpecialPages": {
+		"PageQuality": "SpecialPageQuality"
+	},
+	"Hooks": {
+		"LoadExtensionSchemaUpdates": "PageQualityHooks::onLoadExtensionSchemaUpdate",
+		"BeforePageDisplay": "PageQualityHooks::onBeforePageDisplay"
+    },
+	"ResourceModules": {	
+		"ext.page_quality.special": {
+			"scripts": [
+				"resources/page_quality_special.js"
+			],
+			"dependencies": [
+				"jquery.tablesorter"
+			]
+		},
+	    "ext.bootstrap": {
+	        "scripts": [
+	                "resources/bootstrap.min.js"
+	        ],
+	        "styles": [
+	                "resources/bootstrap.min.css"
+	        ]
+	    },
+	    "ext.jquery_confirm": {
+	        "scripts": [
+	                "resources/jquery-confirm.min.js"
+	        ],
+	        "styles": [
+	                "resources/jquery-confirm.min.css"
+	        ]
+	    }
+	},
+    "ResourceFileModulePaths": {
+            "localBasePath": "",
+            "remoteExtPath": "PageQuality"
+    },
+    "manifest_version": 1
+}
