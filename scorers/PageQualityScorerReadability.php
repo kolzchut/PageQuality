@@ -60,7 +60,7 @@ class PageQualityScorerReadability{
 			if ( $score != "green" ) {
 				$response['para_length'][] = [
 					"score" => $score,
-					"example" => substr( $pNode->nodeValue, 0, 50)
+					"example" => mb_substr( $pNode->nodeValue, 0, 50)
 				];
 			}
 
@@ -78,7 +78,7 @@ class PageQualityScorerReadability{
 				if ( $score != "green" ) {
 					$response['sentence_length'][] = [
 						"score" => $score,
-						"example" => substr( $sentence, 0, 50)
+						"example" => mb_substr( $sentence, 0, 50)
 					];
 				}
 			}
