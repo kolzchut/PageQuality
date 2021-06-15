@@ -1,0 +1,13 @@
+{
+	" @metadata " : {
+		" authors " : [
+			"Nischayn22"
+		]
+	},
+	"pq_page_quality" : "Page Quality",
+	"pq_page_quality_report_for_title" : "Page Quality Report for",
+	"pq_settings" : "Settings",
+	"pq_settings_title" : "Page Quality Settings",
+	"pq_maintenance" : "Maintenance",
+	"pq_reports" : "Reports"
+}

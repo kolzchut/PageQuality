@@ -9,14 +9,14 @@ class SpecialPageQuality extends SpecialPage{
 
 	function execute( $subpage ) {
 		$linkDefs = [
-			'Settings' => 'Special:PageQuality/settings',
-			'Maintenance' => 'Special:PageQuality/maintenance',
-			'Reports' => 'Special:PageQuality/reports',
+			'pq_settings' => 'Special:PageQuality/settings',
+			'pq_maintenance' => 'Special:PageQuality/maintenance',
+			'pq_reports' => 'Special:PageQuality/reports',
 		];
 		$links = [];
 		foreach ( $linkDefs as $name => $page ) {
 			$title = Title::newFromText( $page );
-			$links[] = Linker::link( $title, $name );
+			$links[] = Linker::link( $title, $this->msg( $name ) );
 		}
 		$linkStr = $this->getContext()->getLanguage()->pipeList( $links );
 		$this->getOutput()->setSubtitle( $linkStr );
@@ -35,7 +35,7 @@ class SpecialPageQuality extends SpecialPage{
 			$this->getOutput()->addHTML( 'You do not have the necessary permissions to view this page.' );
 			return;
 		}
-		$this->getOutput()->setPageTitle( "Page Quality Settings" );
+		$this->getOutput()->setPageTitle( $this->msg( 'pq_settings_title' ) );
 
 		$panels = "";
 
@@ -101,7 +101,7 @@ class SpecialPageQuality extends SpecialPage{
 		$page_id = $this->getRequest()->getVal('page_id');
 		$title = Title::newFromId( $page_id );
 
-		$this->getOutput()->setPageTitle( "Page Quality Report for: " . $title->getText() );
+		$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_report_for_title' ) . " " . $title->getText() );
 
 		$this->getOutput()->addHTML( self::getPageQualityReportHtml( $page_id ) );
 	}

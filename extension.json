@@ -22,6 +22,11 @@
 		"LoadExtensionSchemaUpdates": "PageQualityHooks::onLoadExtensionSchemaUpdate",
 		"BeforePageDisplay": "PageQualityHooks::onBeforePageDisplay"
     },
+	"MessagesDirs": {
+		"PageQuality": [
+			"i18n"
+		]
+	},
 	"ResourceModules": {
 		"ext.page_quality": {
 			"scripts": [
