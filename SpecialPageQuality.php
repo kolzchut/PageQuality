@@ -103,6 +103,9 @@ class SpecialPageQuality extends SpecialPage{
 
 		$this->getOutput()->setPageTitle( "Page Quality Report for: " . $title->getText() );
 
+		$this->getOutput()->addHTML( self::getPageQualityReportHtml( $page_id ) );
+	}
+	public static function getPageQualityReportHtml( $page_id ) {
 		PageQualityScorer::loadAllScoreres();
 
 		$dbr = wfGetDB( DB_REPLICA );
@@ -113,6 +116,8 @@ class SpecialPageQuality extends SpecialPage{
 			array( 'page_id' => $page_id ),
 			__METHOD__
 		);
+
+		$html = "";
 
 		$responses = [];
 
@@ -159,8 +164,6 @@ class SpecialPageQuality extends SpecialPage{
 				';
 			}
 		}
-
-		$this->getOutput()->addModules( 'ext.bootstrap' );
-		$this->getOutput()->addHTML( $html );
+		return $html;
 	}
 }

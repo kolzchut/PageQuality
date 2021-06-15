@@ -1,0 +1,19 @@
+.jconfirm .jconfirm-holder{
+	padding:0px !important
+}
+
+.jconfirm{
+	top: auto;
+    bottom: 0;
+    left: auto;
+    right: 10px;
+    background-color: transparent;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px 0 rgb(60 64 67 / 30%), 0 4px 8px 3px rgb(60 64 67 / 15%);
+    min-width: 360px;
+}
+
+.jconfirm.jconfirm-white .jconfirm-bg, .jconfirm.jconfirm-light .jconfirm-bg{
+	background-color: transparent;
+}

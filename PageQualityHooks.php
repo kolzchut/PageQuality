@@ -36,9 +36,11 @@ class PageQualityHooks {
 
 			$wgOut->setIndicators( [
 				"pq_status" => 
-					'<a href="'. $wgScript .'/Special:PageQuality/report?page_id='. $wgOut->getTitle()->getArticleID() .'">Quality Feedback <span class="badge">'. $score .'</span></a>
+					'<a class="page_quality_show" data-page_id="'.$wgOut->getTitle()->getArticleID().'">Quality Feedback <span class="badge">'. $score .'</span></a>
 					'
 			]);
+			$out->addModules( 'ext.page_quality' );
+			$out->addModules( 'ext.jquery_confirm' );
 		}
 	}
 

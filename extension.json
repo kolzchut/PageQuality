@@ -9,7 +9,11 @@
 	"AutoloadClasses": {
 		"PageQualityHooks": "PageQualityHooks.php",
 		"PageQualityScorer": "PageQualityScorer.php",
-		"SpecialPageQuality": "SpecialPageQuality.php"
+		"SpecialPageQuality": "SpecialPageQuality.php",
+		"PageQualityApi": "PageQualityApi.php"
+	},
+	"APIModules": {
+		"page_quality_api": "PageQualityApi"
 	},
 	"SpecialPages": {
 		"PageQuality": "SpecialPageQuality"
@@ -18,7 +22,18 @@
 		"LoadExtensionSchemaUpdates": "PageQualityHooks::onLoadExtensionSchemaUpdate",
 		"BeforePageDisplay": "PageQualityHooks::onBeforePageDisplay"
     },
-	"ResourceModules": {	
+	"ResourceModules": {
+		"ext.page_quality": {
+			"scripts": [
+				"resources/page_quality.js"
+			],
+	        "styles": [
+	                "resources/page_quality.css"
+	        ],
+			"dependencies": [
+				"jquery.tablesorter"
+			]
+		},
 		"ext.page_quality.special": {
 			"scripts": [
 				"resources/page_quality_special.js"
