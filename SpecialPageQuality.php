@@ -56,12 +56,12 @@ class SpecialPageQuality extends SpecialPage{
 			foreach( $all_checklist as $type => $check ) {
 				$settings_html .= '
 					<div class="form-group">
-						<label for="'. $type . PageQualityScorer::YELLOW .'">'. $check['name'] .' - Yellow</label>
-						<input type="text" class="form-control" id="" placeholder="'. $check[PageQualityScorer::YELLOW] .'">
-					</div>
-					<div class="form-group">
 						<label for="'. $type . PageQualityScorer::RED .'">'. $check['name'] .' - Red</label>
 						<input type="text" class="form-control" id="" placeholder="'. $check[PageQualityScorer::RED] .'">
+					</div>
+					<div class="form-group">
+						<label for="'. $type . PageQualityScorer::YELLOW .'">'. $check['name'] .' - Yellow</label>
+						<input type="text" class="form-control" id="" placeholder="'. $check[PageQualityScorer::YELLOW] .'">
 					</div>
   				';
 			}
@@ -122,21 +122,22 @@ class SpecialPageQuality extends SpecialPage{
 			];
 		}
 		foreach( $responses as $type => $type_responses ) {
+			krsort( $type_responses );
 			foreach( $type_responses as $score => $responses ) {
-				if ( $score == PageQualityScorer::YELLOW ) {
+				if ( $score == PageQualityScorer::RED ) {
 					$html .= '
 						<div class="panel panel-danger">
 						<div class="panel-heading">
-							<span style="background:#ffeeba;font-weight:600;text-transform:uppercase;">'. count( $responses ) .' Warnings </span> - 
-							<span style="font-weight:600;">'. PageQualityScorer::getAllChecksList()[$type]['name'] .' - Exceeds recommended limit of '. PageQualityScorer::getAllChecksList()[$type][PageQualityScorer::YELLOW] . '</span>
+							<span style="background:#f5c6cb;color:#721c24;font-weight:600;text-transform:uppercase;">'. count( $responses ) .' Issues </span> - 
+							<span style="font-weight:600;">'. PageQualityScorer::getAllChecksList()[$type]['name'] .' - Exceeds recommended limit of '. PageQualityScorer::getAllChecksList()[$type][PageQualityScorer::RED] . '</span>
 						</div>
 					';
 				} else {
 					$html .= '
 						<div class="panel panel-danger">
 						<div class="panel-heading">
-							<span style="background:#f5c6cb;color:#721c24;font-weight:600;text-transform:uppercase;">'. count( $responses ) .' Issues </span> - 
-							<span style="font-weight:600;">'. PageQualityScorer::getAllChecksList()[$type]['name'] .' - Exceeds recommended limit of '. PageQualityScorer::getAllChecksList()[$type][PageQualityScorer::RED] . '</span>
+							<span style="background:#ffeeba;font-weight:600;text-transform:uppercase;">'. count( $responses ) .' Warnings </span> - 
+							<span style="font-weight:600;">'. PageQualityScorer::getAllChecksList()[$type]['name'] .' - Exceeds recommended limit of '. PageQualityScorer::getAllChecksList()[$type][PageQualityScorer::YELLOW] . '</span>
 						</div>
 					';
 				}
