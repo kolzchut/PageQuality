@@ -28,7 +28,6 @@
 				alert( "ERROR : " + data.error.info );
 			}
 		}
-		initBind();
 	};
 
 	$(document).ready(function () { //jquery
@@ -45,22 +44,25 @@
 			// 	draggable: false,
 			//     content: function () {
 			//         var self = this;
-			//         return $.ajax({
-			//             url: mw.config.get('wgScriptPath') + '/api.php?format=json&action=page_quality_api&pq_action=fetch_report_html&page_id=' + page_id,
-			//             dataType: 'json',
-			//             method: 'get'
-			//         }).done(function (data) {
+			// 		var api = new mw.Api();
+			// 		api.get( {
+			// 		    action: 'page_quality_api',
+			// 		    pq_action: 'fetch_report_html',
+			// 		    page_id: page_id
+			// 		} ).done( function ( data ) {
 			//             self.setContent(data.result.html);
 			//             self.setTitle(data.result.title);
-			//         }).fail(function(){
-			//             self.setContent('Something went wrong.');
-			//         });
+			// 			success(data);
+			// 		} );
 			//     }
 			// });
-			$.ajax({
-			  url: mw.config.get( 'wgScriptPath' ) + '/api.php?format=json&action=page_quality_api&pq_action=fetch_report_html&page_id=' + page_id,
-			  type:"POST",
-			  success: function ( data ) {
+
+			var api = new mw.Api();
+			api.get( {
+			    action: 'page_quality_api',
+			    pq_action: 'fetch_report_html',
+			    page_id: page_id
+			} ).done( function ( data ) {
 				popup = $.confirm({
 					boxWidth: '500px',
 					buttons: false,
@@ -70,10 +72,9 @@
 				    title: data.result.title
 				});
 				success(data);
-				return false;
-			  }
 			});
-		} )
+
+		})
 	});
 
 } )( jQuery );
