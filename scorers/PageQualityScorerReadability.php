@@ -1,43 +1,38 @@
 <?php
 
-class PageQualityScorerReadability{
+class PageQualityScorerReadability extends PageQualityScorer{
 
 	public static $checksList = [
 		"para_length" => [
-			"name" => "Max words in a paragraph",
-			"description" => "The maximum number of words a paragraph should have",
-			PageQualityScorer::YELLOW => 40,
-			PageQualityScorer::RED => 60
+			"name" => "pag_scorer_para_len",
+			"description" => "pag_scorer_para_len_desc",
+			"check_type" => "min",
+			"severity" => PageQualityScorer::YELLOW,
+			"default" => 40
+		],
+		"para_length_max" => [
+			"name" => "pag_scorer_para_len_max",
+			"description" => "pag_scorer_para_len_desc",
+			"check_type" => "max",
+			"severity" => PageQualityScorer::RED,
+			"default" => 60
 		],
 		"sentence_length" => [
-			"name" => "Max words in a sentence",
-			"description" => "The maximum number of words a sentence should have",
-			PageQualityScorer::YELLOW => 15,
-			PageQualityScorer::RED => 30
+			"name" => "pag_scorer_sentence_len",
+			"description" => "pag_scorer_sentence_len_desc",
+			"check_type" => "max",
+			"severity" => PageQualityScorer::YELLOW,
+			"default" => 15
+		],
+		"sentence_length_max" => [
+			"name" => "pag_scorer_sentence_len_max",
+			"description" => "pag_scorer_sentence_len_desc",
+			"check_type" => "max",
+			"severity" => PageQualityScorer::RED,
+			"default" => 30
 		],
 	];
 
-	public static function getCheckList() {
-		return self::$checksList;
-	}
-
-	/***
-	 * @link https://www.php.net/manual/en/function.str-word-count.php#107363
-	 *
-	 * This simple utf-8 word count function (it only counts)
-	 * is a bit faster then the one with preg_match_all
-	 * about 10x slower then the built-in str_word_count
-	 *
-	 * If you need the hyphen or other code points as word-characters
-	 * just put them into the [brackets] like [^\p{L}\p{N}\'\-]
-	 * If the pattern contains utf-8, utf8_encode() the pattern,
-	 * as it is expected to be valid utf-8 (using the u modifier).
-	 **/
-
-	// Jonny 5's simple word splitter
-	function str_word_count_utf8($str) {
-		return count(preg_split('~[^\p{L}\p{N}\']+~u',$str));
-	}
 
 	public function calculatePageScore( $text ) {
 		$response = [];
@@ -52,32 +47,30 @@ class PageQualityScorerReadability{
 			$wc = self::str_word_count_utf8( $pNode->nodeValue );
 
 			$score = "green";
-			if ( $wc >= self::$checksList["para_length"][PageQualityScorer::RED] ) {
-				$score = PageQualityScorer::RED;
-			} else if ( $wc >= self::$checksList["para_length"][PageQualityScorer::YELLOW] ) {
-				$score = PageQualityScorer::YELLOW;
-			}
-			if ( $score != "green" ) {
+			if ( $wc >= $this->getSetting( "para_length_max" ) ) {
+				$response['para_length_max'][] = [
+					"score" => self::getCheckList()['para_length_max']['severity'],
+					"example" => mb_substr( $pNode->nodeValue, 0, 50)
+				];
+			} else if ( $wc >= $this->getSetting( "para_length" ) ) {
 				$response['para_length'][] = [
-					"score" => $score,
+					"score" => self::getCheckList()['para_length']['severity'],
 					"example" => mb_substr( $pNode->nodeValue, 0, 50)
 				];
 			}
-
 
 			$sentences = preg_split('/(?<=[.?!])\s+(?=[a-z])/i', $pNode->nodeValue);
 			foreach( $sentences as $sentence ) {
 				$wc = self::str_word_count_utf8( $sentence );
 
-				$score = "green";
-				if ( $wc >= self::$checksList["sentence_length"][PageQualityScorer::RED] ) {
-					$score = PageQualityScorer::RED;
-				} else if ( $wc >= self::$checksList["sentence_length"][PageQualityScorer::YELLOW] ) {
-					$score = PageQualityScorer::YELLOW;
-				}
-				if ( $score != "green" ) {
+				if ( $wc >= $this->getSetting( "sentence_length_max" ) ) {
+					$response['sentence_length_max'][] = [
+						"score" => self::getCheckList()['sentence_length_max']['severity'],
+						"example" => mb_substr( $sentence, 0, 50)
+					];
+				} else if ( $wc >= $this->getSetting( "sentence_length" ) ) {
 					$response['sentence_length'][] = [
-						"score" => $score,
+						"score" => self::getCheckList()['sentence_length']['severity'],
 						"example" => mb_substr( $sentence, 0, 50)
 					];
 				}

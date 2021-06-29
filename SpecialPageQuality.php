@@ -29,7 +29,7 @@ class SpecialPageQuality extends SpecialPage{
 	}
 
 	function showSettings() {
-		global $wgUser;
+		global $wgUser, $wgScript;
 
 		if ( !in_array( 'sysop', $wgUser->getEffectiveGroups() ) ) {
 			$this->getOutput()->addHTML( 'You do not have the necessary permissions to view this page.' );
@@ -39,6 +39,31 @@ class SpecialPageQuality extends SpecialPage{
 
 		$panels = "";
 
+		$dbw = wfGetDB( DB_MASTER );
+		$dbr = wfGetDB( DB_REPLICA );
+
+		if ( $this->getRequest()->getVal('save') ==  1 ) {
+			foreach( PageQualityScorer::getAllScorers() as $scorer_class ) {
+				$all_checklist = $scorer_class::getCheckList();
+				foreach( $all_checklist as $type => $check ) {
+					if ( $this->getRequest()->getVal( $type ) ) {
+						$dbw->delete(
+							'pq_settings',
+							array( 'setting' => $type ),
+							__METHOD__
+						);
+						$dbw->insert(
+							'pq_settings',
+							array( 'setting' => $type, 'value' => $this->getRequest()->getVal( $type ) ),
+							__METHOD__
+						);
+					}
+				}
+			}
+		}
+
+		$saved_settings_values = PageQualityScorer::getSettingValues();
+
 		$html = '
 		<div class="" style="">
 			<ul id="tabs" class="nav nav-tabs" role="tablist">
@@ -47,29 +72,33 @@ class SpecialPageQuality extends SpecialPage{
 		foreach( PageQualityScorer::getAllScorers() as $scorer_class ) {
 			$class_type = str_replace( "PageQualityScorer", "", $scorer_class );
 			$html .= '
-			  <li role="presentation" class="nav-item"><a class="nav-link active" aria-controls="'. $class_type .'" role="tab" href="#'. strtolower( $class_type ) .'" data-toggle="tabs">'. $class_type .'</a></li>
+			  <li role="presentation" class="nav-item"><a class="nav-link active" data-toggle="tab" aria-controls="'. strtolower( $class_type ) .'" role="tab" href="#'. strtolower( $class_type ) .'" data-toggle="tabs">'. $class_type .'</a></li>
 			';
 
 			$settings_html = "";
 
 			$all_checklist = $scorer_class::getCheckList();
-			foreach( $all_checklist as $type => $check ) {
+			foreach( $all_checklist as $type => $data ) {
+				if ( !array_key_exists( 'default', $data ) ) {
+					continue;
+				}
+				$value = "";
+				if ( array_key_exists( $type, $saved_settings_values ) ) {
+					$value = $saved_settings_values[$type];
+				}
 				$settings_html .= '
 					<div class="form-group">
-						<label for="'. $type . PageQualityScorer::RED .'">'. $check['name'] .' - Red</label>
-						<input type="text" class="form-control" id="" placeholder="'. $check[PageQualityScorer::RED] .'">
-					</div>
-					<div class="form-group">
-						<label for="'. $type . PageQualityScorer::YELLOW .'">'. $check['name'] .' - Yellow</label>
-						<input type="text" class="form-control" id="" placeholder="'. $check[PageQualityScorer::YELLOW] .'">
+						<label for="'. $type .'">'. $this->msg( $data['name'] ) .'</label>
+						<input name="'. $type .'" type="text" class="form-control" placeholder="'. $data['default'] .'" value='. $value .'>
 					</div>
   				';
 			}
 
+			$save_link = $wgScript . '?title=Special:PageQuality/settings&save=1';
 			$panels .= '
-			<div role="tabpanel" class="tab-pane active card-body" id="'. strtolower( $class_type ) .'">
+			<div role="tabpanel" class="tab-pane card-body" id="'. strtolower( $class_type ) .'">
 				<div id="settings_list" style="margin-top:10px;">
-					<form>
+					<form action="' . $save_link . '" method="post">
 						'. $settings_html .'
 						<button type="submit" class="btn btn-primary">Save</button>
 					</form>
@@ -105,6 +134,7 @@ class SpecialPageQuality extends SpecialPage{
 
 		$this->getOutput()->addHTML( self::getPageQualityReportHtml( $page_id ) );
 	}
+
 	public static function getPageQualityReportHtml( $page_id ) {
 		PageQualityScorer::loadAllScoreres();
 
@@ -120,37 +150,39 @@ class SpecialPageQuality extends SpecialPage{
 		$html = "";
 
 		$responses = [];
-
 		foreach( $res as $row ) {
 			$responses[$row->pq_type][$row->score][] = [
 				"example" => $row->example
 			];
 		}
+
+		$saved_settings_values = PageQualityScorer::getSettingValues();
+		$all_checklist = [];
+		foreach( PageQualityScorer::getAllScorers() as $scorer_class ) {
+			$all_checklist += $scorer_class::getCheckList();
+		}
+
 		foreach( $responses as $type => $type_responses ) {
 			krsort( $type_responses );
-			foreach( $type_responses as $score => $responses ) {
-				if ( $score == PageQualityScorer::RED ) {
-					$html .= '
-						<div class="panel panel-danger">
-						<div class="panel-heading">
-							<span style="background:#f5c6cb;color:#721c24;font-weight:600;text-transform:uppercase;">'. count( $responses ) .' Issues </span> - 
-							<span style="font-weight:600;">'. PageQualityScorer::getAllChecksList()[$type]['name'] .' - Exceeds recommended limit of '. PageQualityScorer::getAllChecksList()[$type][PageQualityScorer::RED] . '</span>
-						</div>
-					';
-				} else {
-					$html .= '
-						<div class="panel panel-danger">
-						<div class="panel-heading">
-							<span style="background:#ffeeba;font-weight:600;text-transform:uppercase;">'. count( $responses ) .' Warnings </span> - 
-							<span style="font-weight:600;">'. PageQualityScorer::getAllChecksList()[$type]['name'] .' - Exceeds recommended limit of '. PageQualityScorer::getAllChecksList()[$type][PageQualityScorer::YELLOW] . '</span>
-						</div>
-					';
+			foreach( $type_responses as $score => $score_responses ) {
+				$message = wfMessage( "page_scorer_exceeds" ) . $saved_settings_values[$type];
+				if ( $all_checklist[$type]['check_type'] == "min" ) {
+					$message = wfMessage( "page_scorer_minimum" ) . $saved_settings_values[$type];
+				} else if ( $all_checklist[$type]['check_type'] == "exist" ) {
+					$message = wfMessage( "page_scorer_existence" );
 				}
+				$html .= '
+					<div class="panel panel-danger">
+					<div class="panel-heading">
+						<span style="background:#f5c6cb;color:#721c24;font-weight:600;text-transform:uppercase;">'. count( $score_responses ) .' Issues </span> - 
+						<span style="font-weight:600;">'. wfMessage( PageQualityScorer::getAllChecksList()[$type]['name'] ) .' - '. $message .'</span>
+					</div>
+				';
 				$html .= '
 				<div class="panel">
 						<ul class="list-group">
 				';
-				foreach( $responses as $response ) {
+				foreach( $score_responses as $response ) {
 					$html .= '
 							 <li class="">
 							    ' . $response['example'] . '...
