@@ -1,6 +1,5 @@
 <?php
 
-
 class SpecialPageQuality extends SpecialPage{
 
 	function __construct() {
@@ -29,18 +28,18 @@ class SpecialPageQuality extends SpecialPage{
 	}
 
 	function showSettings() {
-		global $wgUser, $wgScript;
+		global $wgScript;
 
-		if ( !in_array( 'sysop', $wgUser->getEffectiveGroups() ) ) {
+		if ( !in_array( 'sysop', $this->getUser()->getEffectiveGroups() ) ) {
 			$this->getOutput()->addHTML( 'You do not have the necessary permissions to view this page.' );
 			return;
 		}
+
+		$this->getOutput()->enableOOUI();
+
 		$this->getOutput()->setPageTitle( $this->msg( 'pq_settings_title' ) );
 
-		$panels = "";
-
-		$dbw = wfGetDB( DB_MASTER );
-		$dbr = wfGetDB( DB_REPLICA );
+		$dbw = wfGetDB( DB_PRIMARY );
 
 		if ( $this->getRequest()->getVal('save') ==  1 ) {
 			foreach( PageQualityScorer::getAllScorers() as $scorer_class ) {
@@ -64,17 +63,9 @@ class SpecialPageQuality extends SpecialPage{
 
 		$saved_settings_values = PageQualityScorer::getSettingValues();
 
-		$html = '
-		<div class="" style="">
-			<ul id="tabs" class="nav nav-tabs" role="tablist">
-		';
-
-		foreach( PageQualityScorer::getAllScorers() as $scorer_class ) {
+		$tabsContent = [];
+		foreach ( PageQualityScorer::getAllScorers() as $scorer_class ) {
 			$class_type = str_replace( "PageQualityScorer", "", $scorer_class );
-			$html .= '
-			  <li role="presentation" class="nav-item"><a class="nav-link active" data-toggle="tab" aria-controls="'. strtolower( $class_type ) .'" role="tab" href="#'. strtolower( $class_type ) .'" data-toggle="tabs">'. $class_type .'</a></li>
-			';
-
 			$settings_html = "";
 
 			$all_checklist = $scorer_class::getCheckList();
@@ -95,30 +86,48 @@ class SpecialPageQuality extends SpecialPage{
 			}
 
 			$save_link = $wgScript . '?title=Special:PageQuality/settings&save=1';
-			$panels .= '
-			<div role="tabpanel" class="tab-pane card-body" id="'. strtolower( $class_type ) .'">
+			$tabsContent[ $class_type ] = '
 				<div id="settings_list" style="margin-top:10px;">
 					<form action="' . $save_link . '" method="post">
 						'. $settings_html .'
 						<button type="submit" class="btn btn-primary">Save</button>
 					</form>
-				</div>
-			</div>';
+				</div>';
 
+
+			$tabPanels[] = new OOUI\TabPanelLayout( 'pq-settings-section-' . $class_type, [
+				'label' => $class_type,
+				'content' => new OOUI\FieldsetLayout( [
+					'classes' => [ 'mw-prefs-section-fieldset' ],
+					'id' => "pq-settings-$class_type",
+					'label' => $class_type,
+					'items' => [
+						new OOUI\Widget( [
+							'content' => new OOUI\HtmlSnippet( $tabsContent[ $class_type ] )
+						] ),
+					],
+				] ),
+				'expanded' => false,
+				'framed' => true,
+			] );
 		}
 
-		$html .= '
-			</ul>
-			<div class="tab-content card panel-default">
-				'. $panels .'
-			</div>
-		</div>
-		';
+		$indexLayout = new OOUI\IndexLayout( [
+			'infusable' => true,
+			'expanded' => false,
+			'autoFocus' => false,
+			'classes' => [ 'pq-settings-tabs' ],
+		] );
+		$indexLayout->addTabPanels( $tabPanels );
 
-		$checksListAll = PageQualityScorer::getAllChecksList();
+		$form = new OOUI\PanelLayout( [
+			'framed' => true,
+			'expanded' => false,
+			'classes' => [ 'pq-settings-tabs-wrapper' ],
+			'content' => $indexLayout
+		] );
 
-		$this->getOutput()->addHTML( $html );
-		$this->getOutput()->addModules( 'ext.bootstrap' );
+		$this->getOutput()->addHTML( $form );
 		$this->getOutput()->addModules( 'ext.page_quality.special' );
 
 	}
@@ -174,7 +183,7 @@ class SpecialPageQuality extends SpecialPage{
 				$html .= '
 					<div class="panel panel-danger">
 					<div class="panel-heading">
-						<span style="background:#f5c6cb;color:#721c24;font-weight:600;text-transform:uppercase;">'. count( $score_responses ) .' Issues </span> - 
+						<span style="background:#f5c6cb;color:#721c24;font-weight:600;text-transform:uppercase;">'. count( $score_responses ) .' Issues </span> -
 						<span style="font-weight:600;">'. wfMessage( PageQualityScorer::getAllChecksList()[$type]['name'] ) .' - '. $message .'</span>
 					</div>
 				';
