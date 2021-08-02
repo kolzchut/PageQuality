@@ -44,7 +44,8 @@
 				"resources/page_quality_special.js"
 			],
 			"dependencies": [
-				"jquery.tablesorter"
+				"jquery.tablesorter",
+				"oojs-ui-widgets"
 			]
 		},
 	    "ext.bootstrap": {
