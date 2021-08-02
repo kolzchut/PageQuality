@@ -48,7 +48,7 @@ class PageQualityScorerCalloutsRules extends PageQualityScorer{
 		if ( !$count ) {
 			$response['callout_number'][] = [
 				"score" => self::getCheckList()['callout_number']['severity'],
-				"example" => ""
+				"example" => wfMessage( "pq_occurance", 0 )
 			];
 		}
 		return $response;

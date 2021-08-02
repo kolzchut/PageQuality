@@ -70,28 +70,30 @@ class PageQualityScorerEmphasisRules extends PageQualityScorer{
 						"example" => mb_substr( $divNodes->item($i)->nodeValue, 0, 50)
 					];
 				}
-	        }
-	        if ( strpos( $divNodes->item($i)->getAttribute('class'), "emphasis-type-government" ) !== false ) {
-	        	$emphasis_gov = true;
+		        if ( strpos( $divNodes->item($i)->getAttribute('class'), "emphasis-type-government" ) !== false ) {
+					$emphasis_gov = true;
+		        } else {
+					$emphasis_gov = false;
+		        }
 	        }
 	    }
 
 		if ( $count < $this->getSetting( "emphasis_lines_min" ) ) {
 			$response['emphasis_lines_min'][] = [
 				"score" => self::getCheckList()['emphasis_lines_min']['severity'],
-				"example" => $count . " occurances found"
+				"example" => wfMessage( "pq_occurance", $count )
 			];
 		}
 		if ( $count >= $this->getSetting( "emphasis_lines_num" ) ) {
 			$response['emphasis_lines_num'][] = [
 				"score" => self::getCheckList()['emphasis_lines_num']['severity'],
-				"example" => $count . " occurances found"
+				"example" => wfMessage( "pq_occurance", $count )
 			];
 		}
 		if ( !$emphasis_gov ) {
 			$response['emphasis_gov_symbol'][] = [
 				"score" => self::getCheckList()['emphasis_gov_symbol']['severity'],
-				"example" => ""
+				"example" => wfMessage( "pq_occurance", 0 )
 			];
 		}
 		return $response;
