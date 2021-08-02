@@ -22,8 +22,8 @@
 	"pag_scorer_emphasis_gov_symbol" : "Govt Emphasis line",
 	"pag_scorer_emphasis_line_length_min" : "Emphasis line length",
 	"pag_scorer_emphasis_length" : "Emphasis line length",
-	"page_scorer_exceeds" : "Exceeds recommended limit of ",
-	"page_scorer_minimum" : "Does not meet the recommended limit of ",
+	"page_scorer_exceeds" : "Exceeds recommended limit of $1",
+	"page_scorer_minimum" : "Does not meet the recommended limit of $1",
 	"page_scorer_existence" : "Should be present",
 	"pag_scorer_callout_number" : "Callouts"
 }

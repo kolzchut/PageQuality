@@ -189,9 +189,9 @@ class SpecialPageQuality extends SpecialPage{
 			} else if ( array_key_exists( 'default', $all_checklist[$type] ) ) {
 					$limit = $all_checklist[$type]['default'];
 				}
-				$message = wfMessage( "page_scorer_exceeds" ) . $limit;
+				$message = wfMessage( "page_scorer_exceeds", $limit );
 				if ( $all_checklist[$type]['check_type'] == "min" ) {
-					$message = wfMessage( "page_scorer_minimum" ) . $limit;
+					$message = wfMessage( "page_scorer_minimum", $limit );
 				} else if ( $all_checklist[$type]['check_type'] == "exist" ) {
 					$message = wfMessage( "page_scorer_existence" );
 				}
