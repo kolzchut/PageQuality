@@ -47,12 +47,16 @@ class PageQualityScorerEmphasisRules extends PageQualityScorer{
 		$dom = new DOMDocument('1.0', 'utf-8');
 		// Unicode-compatibility - see https://stackoverflow.com/questions/8218230/php-domdocument-loadhtml-not-encoding-utf-8-correctly
 		$dom->loadHTML( '<?xml encoding="utf-8" ?>' . $text );
-
 		$count = 0;
 		$emphasis_gov = false;
 		$divNodes = $dom->getElementsByTagName('div');
 	    for ($i = 0; $i < $divNodes->length; $i++) {
-	        if (stripos($divNodes->item($i)->getAttribute('class'), "emphasis-item") !== false) {
+	        if ( stripos($divNodes->item($i)->getAttribute('class'), "emphasis-item") !== false
+	        	&&
+	        	stripos($divNodes->item($i)->getAttribute('class'), "emphasis-item-icon") === false
+	        	&&
+	        	stripos($divNodes->item($i)->getAttribute('class'), "emphasis-item-text") === false
+	   		) {
 	        	$count++;
 				$wc = self::str_word_count_utf8( $divNodes->item($i)->nodeValue );
 				if ( $wc >= $this->getSetting( "emphasis_line_length" ) ) {
