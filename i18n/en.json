@@ -24,5 +24,6 @@
 	"pag_scorer_emphasis_length" : "Emphasis line length",
 	"page_scorer_exceeds" : "Exceeds recommended limit of ",
 	"page_scorer_minimum" : "Does not meet the recommended limit of ",
-	"page_scorer_existence" : "Should be present"
+	"page_scorer_existence" : "Should be present",
+	"pag_scorer_callout_number" : "Callouts"
 }

@@ -64,16 +64,21 @@ class SpecialPageQuality extends SpecialPage{
 
 		$saved_settings_values = PageQualityScorer::getSettingValues();
 
+		$save_link = $wgScript . '?title=Special:PageQuality/settings&save=1';
 		$html = '
 		<div class="" style="">
-			<ul id="tabs" class="nav nav-tabs" role="tablist">
+			<form action="' . $save_link . '" method="post">
 		';
+
+		// $html = '
+		// 	<ul id="tabs" class="nav nav-tabs" role="tablist">
+		// ';
 
 		foreach( PageQualityScorer::getAllScorers() as $scorer_class ) {
 			$class_type = str_replace( "PageQualityScorer", "", $scorer_class );
-			$html .= '
-			  <li role="presentation" class="nav-item"><a class="nav-link active" data-toggle="tab" aria-controls="'. strtolower( $class_type ) .'" role="tab" href="#'. strtolower( $class_type ) .'" data-toggle="tabs">'. $class_type .'</a></li>
-			';
+			// $html .= '
+			//   <li role="presentation" class="nav-item"><a class="nav-link active" data-toggle="tab" aria-controls="'. strtolower( $class_type ) .'" role="tab" href="#'. strtolower( $class_type ) .'" data-toggle="tabs">'. $class_type .'</a></li>
+			// ';
 
 			$settings_html = "";
 
@@ -93,25 +98,28 @@ class SpecialPageQuality extends SpecialPage{
 					</div>
   				';
 			}
+			if ( empty( $settings_html ) ) {
+				continue;
+			}
 
-			$save_link = $wgScript . '?title=Special:PageQuality/settings&save=1';
 			$panels .= '
-			<div role="tabpanel" class="tab-pane card-body" id="'. strtolower( $class_type ) .'">
-				<div id="settings_list" style="margin-top:10px;">
-					<form action="' . $save_link . '" method="post">
+			<div class="card" id="'. strtolower( $class_type ) .'" style="margin-bottom:20px;">
+				<div class="card-header" style="">
+					'. $class_type .'
+				</div>
+  				<div class="card-body" style="">
 						'. $settings_html .'
-						<button type="submit" class="btn btn-primary">Save</button>
-					</form>
 				</div>
 			</div>';
 
 		}
 
+		// $html .= '
+		// 	</ul>';
 		$html .= '
-			</ul>
-			<div class="tab-content card panel-default">
 				'. $panels .'
-			</div>
+				<button type="submit" class="btn btn-primary">Save</button>
+			</form>
 		</div>
 		';
 
@@ -165,16 +173,22 @@ class SpecialPageQuality extends SpecialPage{
 		foreach( $responses as $type => $type_responses ) {
 			krsort( $type_responses );
 			foreach( $type_responses as $score => $score_responses ) {
-				$message = wfMessage( "page_scorer_exceeds" ) . $saved_settings_values[$type];
+				$limit = 0;
+				if ( array_key_exists( $type, $saved_settings_values )  ) {
+					$limit = $saved_settings_values[$type];
+			} else if ( array_key_exists( 'default', $all_checklist[$type] ) ) {
+					$limit = $all_checklist[$type]['default'];
+				}
+				$message = wfMessage( "page_scorer_exceeds" ) . $limit;
 				if ( $all_checklist[$type]['check_type'] == "min" ) {
-					$message = wfMessage( "page_scorer_minimum" ) . $saved_settings_values[$type];
+					$message = wfMessage( "page_scorer_minimum" ) . $limit;
 				} else if ( $all_checklist[$type]['check_type'] == "exist" ) {
 					$message = wfMessage( "page_scorer_existence" );
 				}
 				$html .= '
 					<div class="panel panel-danger">
 					<div class="panel-heading">
-						<span style="background:#f5c6cb;color:#721c24;font-weight:600;text-transform:uppercase;">'. count( $score_responses ) .' Issues </span> - 
+						<span style="background:#f5c6cb;color:#721c24;font-weight:600;text-transform:uppercase;">'. count( $score_responses ) .' Issues</span> - 
 						<span style="font-weight:600;">'. wfMessage( PageQualityScorer::getAllChecksList()[$type]['name'] ) .' - '. $message .'</span>
 					</div>
 				';

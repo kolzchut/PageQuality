@@ -28,7 +28,7 @@ abstract class PageQualityScorer{
 		return count(preg_split('~[^\p{L}\p{N}\']+~u',$str));
 	}
 
-	public function getCheckList() {
+	public static function getCheckList() {
 		return static::$checksList;
 	}
 
@@ -45,6 +45,7 @@ abstract class PageQualityScorer{
 		}
 		return self::getCheckList()[$type]['default'];
 	}
+
 	public static function getAllScorers( ) {
 		if ( empty( self::$registered_classes ) ) {
 			self::loadAllScoreres();
