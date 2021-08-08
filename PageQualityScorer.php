@@ -82,9 +82,10 @@ abstract class PageQualityScorer{
 		// Unicode-compatibility - see https://stackoverflow.com/questions/8218230/php-domdocument-loadhtml-not-encoding-utf-8-correctly
 		$dom->loadHTML( '<?xml encoding="utf-8" ?>' . $text );
 		$dom->preserveWhiteSpace = false;
+		self::$dom = $dom;
 		self::removeIgnoredElements();
 
-		return self::$dom = $dom;
+		return self::$dom;
 	}
 
 	/**
@@ -126,7 +127,7 @@ abstract class PageQualityScorer{
 	}
 
 	protected static function removeIgnoredElements () {
-		$ignoredElements = self::getElementsByClassName( self::$dom, 'pagequality-ignore' );
+		$ignoredElements = self::getElementsByClassName( self::getDOM(), 'pagequality-ignore' );
 		foreach ( $ignoredElements as $element ) {
 			$element->parentNode->removeChild( $element );
 		}
