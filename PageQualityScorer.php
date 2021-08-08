@@ -4,11 +4,12 @@ abstract class PageQualityScorer{
 	const YELLOW = 1;
 	const RED = 2;
 
-	abstract public function calculatePageScore( $text );
+	abstract public function calculatePageScore();
 
 	public static $registered_classes = [];
 	public static $settings = [];
 	public static $checksList = [];
+	public static $dom = null;
 
 	/***
 	 * @link https://www.php.net/manual/en/function.str-word-count.php#107363
@@ -72,6 +73,25 @@ abstract class PageQualityScorer{
 		return self::$settings;
 	}
 
+	/**
+	 * @param string $text
+	 */
+	public static function loadDOM( $text ) {
+		// @todo load only actual page content. right now this will also load stuff like the "protectedpagewarning" message
+		$dom = new DOMDocument('1.0', 'utf-8');
+		// Unicode-compatibility - see https://stackoverflow.com/questions/8218230/php-domdocument-loadhtml-not-encoding-utf-8-correctly
+		$dom->loadHTML( '<?xml encoding="utf-8" ?>' . $text );
+
+		return self::$dom = $dom;
+	}
+
+	/**
+	 * @return DOMDocument|null
+	 */
+	protected static function getDOM() {
+		return self::$dom;
+	}
+
 	public static function getAllChecksList() {
 		$all_checklist = [];
 		foreach( self::$registered_classes as $scorer_class ) {
@@ -81,10 +101,11 @@ abstract class PageQualityScorer{
 	}
 
 	public static function runAllScoreres( $text ) {
+		self::loadDOM( $text );
 		$responses = [];
 		foreach( self::$registered_classes as $scorer_class ) {
 			$scorer_obj = new $scorer_class();
-			$responses += $scorer_obj->calculatePageScore( $text );
+			$responses += $scorer_obj->calculatePageScore();
 		}
 
 		$score = 0;
