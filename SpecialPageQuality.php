@@ -198,7 +198,7 @@ class SpecialPageQuality extends SpecialPage{
 				$html .= '
 					<div class="panel panel-danger">
 					<div class="panel-heading">
-						<span style="background:#f5c6cb;color:#721c24;font-weight:600;text-transform:uppercase;">'. count( $score_responses ) .' Issues</span> - 
+						<span style="background:#f5c6cb;color:#721c24;font-weight:600;text-transform:uppercase;">'. wfMessage( 'pq_num_issues' )->numParams( count( $score_responses ) ) . '</span> -
 						<span style="font-weight:600;">'. wfMessage( PageQualityScorer::getAllChecksList()[$type]['name'] ) .' - '. $message .'</span>
 					</div>
 				';
