@@ -35,7 +35,7 @@ abstract class PageQualityScorer{
 
 	public static function loadAllScoreres() {
 		foreach ( glob( __DIR__ . "/scorers/*.php") as $filename ) {
-		    include_once $filename;
+			include_once $filename;
 			self::$registered_classes[] = basename($filename, '.php');
 		}
 	}
@@ -81,6 +81,8 @@ abstract class PageQualityScorer{
 		$dom = new DOMDocument('1.0', 'utf-8');
 		// Unicode-compatibility - see https://stackoverflow.com/questions/8218230/php-domdocument-loadhtml-not-encoding-utf-8-correctly
 		$dom->loadHTML( '<?xml encoding="utf-8" ?>' . $text );
+		$dom->preserveWhiteSpace = false;
+		self::removeIgnoredElements();
 
 		return self::$dom = $dom;
 	}
@@ -116,4 +118,18 @@ abstract class PageQualityScorer{
 		}
 		return [ $score, $responses ];
 	}
+
+	protected static function getElementsByClassName( DOMDocument $dom, $className ) {
+		$xpath = new DOMXpath( $dom );
+		$expression = '//*[contains(concat(" ", normalize-space(@class), " "), " ' . $className . ' ")]';
+		return $xpath->query( $expression );
+	}
+
+	protected static function removeIgnoredElements () {
+		$ignoredElements = self::getElementsByClassName( self::$dom, 'pagequality-ignore' );
+		foreach ( $ignoredElements as $element ) {
+			$element->parentNode->removeChild( $element );
+		}
+	}
+
 }
