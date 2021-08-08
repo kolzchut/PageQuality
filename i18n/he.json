@@ -1,0 +1,34 @@
+{
+	"@metadata": {
+		"authors": [
+			"Dror S. [FFS]"
+		]
+	},
+	"pq_page_quality": "איכות עמוד",
+	"pq_page_quality_report_for_title": "דו\"ח איכות עמוד עבור $1",
+	"pq_settings": "הגדרות",
+	"pq_settings_title": "הגדרות איכות עמוד",
+	"pq_maintenance": "תחזוקה",
+	"pq_reports": "דו\"חות",
+	"pag_scorer_sentence_len": "מקס' מילים במשפט",
+	"pag_scorer_sentence_len_max": "מקס' מילים במשפט",
+	"pag_scorer_para_len": "מקס' מילים בפסקה",
+	"pag_scorer_para_len_max": "מקס' מילים בפסקה",
+	"pag_scorer_para_len_desc": "מספר המילים המקסימלי שרצוי שיהיה בפסקה",
+	"pag_scorer_sentence_len_desc": "מספר המילים המקסימלי שרצוי שיהיה במשפט",
+	"pg_exceeds_limit_error": "חורג מהמקס' המומלץ של",
+	"pag_scorer_emphasis_lines_min": "מינ' שורות דגשים",
+	"pag_scorer_emphasis_lines_num": "מקס' שורות דגשים",
+	"pag_scorer_emphasis_gov_symbol": "דגש ממשל בשורה הדגשים האחרונה",
+	"pag_scorer_emphasis_line_length_min": "אורך שורת דגשים",
+	"pag_scorer_emphasis_length": "אורך שורת דגשים",
+	"pag_scorer_table_columns": "מקס' טורים בטבלה",
+	"pag_scorer_table_rows": "מינ' טורים בטבלה",
+	"page_scorer_exceeds": "חורג מהמקסימום המומלץ ($1)",
+	"page_scorer_minimum": "לא מגיע למינימום המומלץ ($1)",
+	"page_scorer_existence": "צריך להיות קיים",
+	"pag_scorer_callout_number": "תיבות הערה",
+	"pq_occurance": "{{PLURAL:$1|נמצא מקרה אחד|נמצאו $1 מקרים}}",
+	"pq_num_issues": "{{PLURAL:$1|בעיה אחת|$1 בעיות}}",
+	"pq_quality_score_link": "ציון איכות"
+}

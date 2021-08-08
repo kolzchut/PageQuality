@@ -28,7 +28,7 @@ class PageQualityApi extends ApiBase {
 			$title = Title::newFromId( $page_id );
 			$html = SpecialPageQuality::getPageQualityReportHtml( $page_id );
 
-			$this->addResultValues( "title", "Page Quality Report for " . $title->getText() );
+			$this->addResultValues( "title", $this->msg( 'pq_page_quality_report_for_title' )->params( $title->getFullText() ) );
 			$this->addResultValues( "html", $html );
 			$this->getResult()->addValue( "result", "success", "success" );
 		}
