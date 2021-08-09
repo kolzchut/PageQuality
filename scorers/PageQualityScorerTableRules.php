@@ -20,15 +20,10 @@ class PageQualityScorerTableRules extends PageQualityScorer{
 	];
 
 
-	public function calculatePageScore( $text ) {
+	public function calculatePageScore() {
 		$response = [];
 
-		// @todo load only actual page content. right now this will also load stuff like the "protectedpagewarning" message
-		$dom = new DOMDocument('1.0', 'utf-8');
-		// Unicode-compatibility - see https://stackoverflow.com/questions/8218230/php-domdocument-loadhtml-not-encoding-utf-8-correctly
-		$dom->loadHTML( '<?xml encoding="utf-8" ?>' . $text );
-
-		$tableNodes = $dom->getElementsByTagName('table');
+		$tableNodes = self::getDOM()->getElementsByTagName('table');
 	    for ($i = 0; $i < $tableNodes->length; $i++) {
 	    	$row_count = 0;
 	    	$column_count = 0;
