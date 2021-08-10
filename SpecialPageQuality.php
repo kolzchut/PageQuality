@@ -83,12 +83,21 @@ class SpecialPageQuality extends SpecialPage{
 				if ( array_key_exists( $type, $saved_settings_values ) ) {
 					$value = $saved_settings_values[$type];
 				}
-				$settings_html .= '
-					<div class="form-group">
-						<label for="'. $type .'">'. $this->msg( $data['name'] ) .'</label>
-						<input name="'. $type .'" type="text" class="form-control" placeholder="'. $data['default'] .'" value='. $value .'>
-					</div>
-  				';
+				if ( array_key_exists( 'data_type', $data ) && $data['data_type'] == "list" ) {
+					$settings_html .= '
+						<div class="form-group">
+							<label for="'. $type .'">'. $this->msg( $data['name'] ) .' (Please add list values separated by newline)</label>
+							<textarea name="'. $type .'" class="form-control" placeholder="'. $data['default'] .'">'. $value .'</textarea>
+						</div>
+					';
+				} else {
+					$settings_html .= '
+						<div class="form-group">
+							<label for="'. $type .'">'. $this->msg( $data['name'] ) .'</label>
+							<input name="'. $type .'" type="text" class="form-control" placeholder="'. $data['default'] .'" value='. $value .'>
+						</div>
+					';
+				}
 			}
 			if ( empty( $settings_html ) ) {
 				continue;
@@ -194,6 +203,8 @@ class SpecialPageQuality extends SpecialPage{
 					$message = wfMessage( "page_scorer_minimum", $limit );
 				} else if ( $all_checklist[$type]['check_type'] == "exist" ) {
 					$message = wfMessage( "page_scorer_existence" );
+				} else if ( $all_checklist[$type]['check_type'] == "do_not_exist" ) {
+					$message = wfMessage( "page_scorer_inexistence" );
 				}
 				$html .= '
 					<div class="panel panel-danger">

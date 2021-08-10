@@ -9,6 +9,7 @@ abstract class PageQualityScorer{
 	public static $registered_classes = [];
 	public static $settings = [];
 	public static $checksList = [];
+	public static $text = null;
 	public static $dom = null;
 
 	/***
@@ -83,9 +84,17 @@ abstract class PageQualityScorer{
 		$dom->loadHTML( '<?xml encoding="utf-8" ?>' . $text );
 		$dom->preserveWhiteSpace = false;
 		self::$dom = $dom;
+		self::$text = $text;
 		self::removeIgnoredElements();
 
 		return self::$dom;
+	}
+
+	/**
+	 * @return string|null
+	 */
+	protected static function getText() {
+		return self::$text;
 	}
 
 	/**

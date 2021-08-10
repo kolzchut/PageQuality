@@ -3,6 +3,14 @@
 class PageQualityScorerReadability extends PageQualityScorer{
 
 	public static $checksList = [
+		"blocked_expressions" => [
+			"name" => "pag_scorer_stop_words",
+			"description" => "pag_scorer_stop_words_desc",
+			"check_type" => "do_not_exist",
+			"data_type" => "list",
+			"severity" => PageQualityScorer::YELLOW,
+			"default" => ""
+		],
 		"para_length" => [
 			"name" => "pag_scorer_para_len",
 			"description" => "pag_scorer_para_len_desc",
@@ -36,6 +44,22 @@ class PageQualityScorerReadability extends PageQualityScorer{
 
 	public function calculatePageScore() {
 		$response = [];
+
+		$blocked_expression_count = 0;
+		$blocked_expressions = explode( PHP_EOL, $this->getSetting( "blocked_expressions" ) );
+		foreach( $blocked_expressions as $blocked_expression ) {
+			if ( empty( $blocked_expression ) ){
+				continue;
+			}
+			$blocked_expression_count += substr_count( self::getText(), $blocked_expression );
+		}
+		if ( $blocked_expression_count > 0 ) {
+			$response['blocked_expressions'][] = [
+				"score" => self::getCheckList()['blocked_expressions']['severity'],
+				"example" => wfMessage( "pq_occurance", $blocked_expression_count )
+			];
+		}
+
 
 		$pNodes = self::getDOM()->getElementsByTagName('p');
 		foreach ( $pNodes as $pNode ) {
