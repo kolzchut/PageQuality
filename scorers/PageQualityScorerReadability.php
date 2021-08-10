@@ -51,7 +51,7 @@ class PageQualityScorerReadability extends PageQualityScorer{
 			if ( empty( $blocked_expression ) ){
 				continue;
 			}
-			$blocked_expression_count += substr_count( self::getText(), $blocked_expression );
+			$blocked_expression_count += substr_count( self::getText(), trim( $blocked_expression ) );
 		}
 		if ( $blocked_expression_count > 0 ) {
 			$response['blocked_expressions'][] = [
