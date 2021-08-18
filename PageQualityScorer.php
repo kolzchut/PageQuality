@@ -112,6 +112,37 @@ abstract class PageQualityScorer{
 		return $all_checklist;
 	}
 
+	public static function runScorerForPage( $title ) {
+		$pageObj = WikiPage::factory( $title );
+		$page_html = $pageObj->getContent( Revision::RAW )->getParserOutput( $title )->getText();
+		PageQualityScorer::loadAllScoreres();
+		list( $score, $responses ) = PageQualityScorer::runAllScoreres( $page_html );
+
+		$dbw = wfGetDB( DB_MASTER );
+		$dbw->delete(
+			'pq_issues',
+			array( "page_id" => $title->getArticleID() ),
+			__METHOD__
+		);
+
+		foreach( $responses as $type => $type_responses ) {
+			foreach( $type_responses as $response ) {
+				$dbw->insert(
+					"pq_issues",
+					[
+						"page_id" => $title->getArticleID(),
+						"pq_type" => $type,
+						"score" => $response['score'],
+						"example" => $response['example']
+					],
+					__METHOD__,
+					array( 'IGNORE' )
+				);
+			}
+		}
+		return [$score, $responses];
+	}
+
 	public static function runAllScoreres( $text ) {
 		self::loadDOM( $text );
 		$responses = [];

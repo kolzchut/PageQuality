@@ -45,19 +45,21 @@ class PageQualityScorerReadability extends PageQualityScorer{
 	public function calculatePageScore() {
 		$response = [];
 
-		$blocked_expression_count = 0;
 		$blocked_expressions = explode( PHP_EOL, $this->getSetting( "blocked_expressions" ) );
 		foreach( $blocked_expressions as $blocked_expression ) {
-			if ( empty( $blocked_expression ) ){
-				continue;
+			$offset = 0;
+			while( ( $offset = strpos( strip_tags( self::getText() ), trim( $blocked_expression ), $offset ) ) !== false ) {
+				$cut_off_start_offset = max( 0, $offset - 30 );
+				if ( strpos( strip_tags( self::getText() ), " ", $cut_off_start_offset ) !== false ) {
+					$cut_off_start_offset = strpos( strip_tags( self::getText() ), " ", $cut_off_start_offset );
+				}
+
+				$response['blocked_expressions'][] = [
+					"score" => self::getCheckList()['blocked_expressions']['severity'],
+					"example" => str_replace( $blocked_expression, "<b>" . $blocked_expression . "</b>", substr( strip_tags( self::getText() ), $cut_off_start_offset, $cut_off_start_offset + strlen( $blocked_expression ) + 30 ) )
+				];
+				$offset += strlen( $blocked_expression );
 			}
-			$blocked_expression_count += substr_count( self::getText(), trim( $blocked_expression ) );
-		}
-		if ( $blocked_expression_count > 0 ) {
-			$response['blocked_expressions'][] = [
-				"score" => self::getCheckList()['blocked_expressions']['severity'],
-				"example" => wfMessage( "pq_occurance", $blocked_expression_count )
-			];
 		}
 
 
