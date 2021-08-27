@@ -4,6 +4,11 @@ abstract class PageQualityScorer{
 	const YELLOW = 1;
 	const RED = 2;
 
+	public static $severity_class = [
+		PageQualityScorer::YELLOW => "yellow",
+		PageQualityScorer::RED => "red"
+	];
+
 	abstract public function calculatePageScore();
 
 	public static $registered_classes = [];

@@ -352,7 +352,10 @@ class SpecialPageQuality extends SpecialPage{
 			</tr>
 		';
 
-		foreach( PageQualityScorer::getAllChecksList() as $type => $type_data ) {
+		$all_checklist = PageQualityScorer::getAllChecksList();
+		$col = array_column( $all_checklist, "severity" );
+		array_multisort( $col, SORT_DESC, $all_checklist );
+		foreach( $all_checklist as $type => $type_data ) {
 			if ( array_key_exists( $type, $scorer_stats ) ) {
 				$page = "Special:PageQuality/reports/$type";
 				$title = Title::newFromText( $page );
