@@ -210,6 +210,9 @@ class SpecialPageQuality extends SpecialPage{
 					Page Name
 				</th>
 				<th>
+					Score
+				</th>
+				<th>
 					Status
 				</th>
 			';
@@ -231,6 +234,9 @@ class SpecialPageQuality extends SpecialPage{
 				<tr>
 					<td>
 						'. Title::newFromId( $page_id )->getText() .'
+					</td>
+					<td>
+						'. $page_data['score'] .'
 					</td>
 					<td>
 						'. ( $page_data['score'] > 10 ? "Red" : ( $page_data['score'] > 0 ? "Yellow" : "Green" ) ) .'
@@ -379,6 +385,7 @@ class SpecialPageQuality extends SpecialPage{
 
 		$this->getOutput()->addHTML( $html );
 	}
+
 	function showReport() {
 		$html = "";
 
