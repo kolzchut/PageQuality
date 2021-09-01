@@ -216,7 +216,10 @@ class SpecialPageQuality extends SpecialPage{
 					Status
 				</th>
 			';
-		foreach( PageQualityScorer::getAllChecksList() as $type => $type_data ) {
+		$all_checklist = PageQualityScorer::getAllChecksList();
+		$col = array_column( $all_checklist, "severity" );
+		array_multisort( $col, SORT_DESC, $all_checklist );
+		foreach( $all_checklist as $type => $type_data ) {
 			$html .= '
 				<th>
 					'. wfMessage( $type_data['name'] ) .'
@@ -242,7 +245,7 @@ class SpecialPageQuality extends SpecialPage{
 						'. ( $page_data['score'] > 10 ? "Red" : ( $page_data['score'] > 0 ? "Yellow" : "Green" ) ) .'
 					</td>
 				';
-			foreach( PageQualityScorer::getAllChecksList() as $type => $type_data ) {
+			foreach( $all_checklist as $type => $type_data ) {
 				$counter = 0;
 				if ( array_key_exists( $type, $page_data ) ) {
 					$counter = $page_data[$type];
