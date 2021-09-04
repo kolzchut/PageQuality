@@ -117,13 +117,26 @@ abstract class PageQualityScorer{
 		return $all_checklist;
 	}
 
-	public static function runScorerForPage( $title ) {
+	public static function runScorerForPage( $title, $page_html = "", $automated_run = false ) {
 		$pageObj = WikiPage::factory( $title );
 		$page_html = $pageObj->getContent( Revision::RAW )->getParserOutput( $title )->getText();
 		PageQualityScorer::loadAllScoreres();
 		list( $score, $responses ) = PageQualityScorer::runAllScoreres( $page_html );
 
 		$dbw = wfGetDB( DB_MASTER );
+		$dbr = wfGetDB( DB_REPLICA );
+		$res = $dbr->select(
+			"pq_issues",
+			'score',
+			["page_id" => $title->getArticleID()],
+			__METHOD__
+		);
+		$old_score = 0;
+		if ( $res->numRows() > 0 ) {
+			foreach( $res as $row ) {
+				$old_score += $row->score;
+			}
+		}
 		$dbw->delete(
 			'pq_issues',
 			array( "page_id" => $title->getArticleID() ),
@@ -145,6 +158,22 @@ abstract class PageQualityScorer{
 				);
 			}
 		}
+
+		if ( !$automated_run && abs( $old_score - $score ) > 1 ) {
+			$dbw->insert(
+				"pq_score_log",
+				[
+					"page_id" => $title->getArticleID(),
+					"revision_id" => $title->getLatestRevID(),
+					"new_score" => $score,
+					"old_score" => $old_score,
+					"timestamp" => (new DateTime())->getTimestamp()
+				],
+				__METHOD__,
+				array( 'IGNORE' )
+			);
+		}
+
 		return [$score, $responses];
 	}
 

@@ -11,6 +11,7 @@ class SpecialPageQuality extends SpecialPage{
 			'pq_settings' => 'Special:PageQuality/settings',
 			'pq_maintenance' => 'Special:PageQuality/maintenance',
 			'pq_reports' => 'Special:PageQuality/reports',
+			'pq_history' => 'Special:PageQuality/history',
 		];
 		$links = [];
 		foreach ( $linkDefs as $name => $page ) {
@@ -24,6 +25,9 @@ class SpecialPageQuality extends SpecialPage{
 			$this->showReport();
 		} else if ( $subpage == "settings" ) {
 			$this->showSettings();
+		} else if ( $subpage == "history" ) {
+			$this->showChangeHistoryForm();
+			$this->showChangeHistory();
 		} else if ( $subpage == "reports" ) {
 			$this->showStatistics();
 		} else if ( strpos( $subpage, "reports" ) !== false ) {
@@ -261,6 +265,108 @@ class SpecialPageQuality extends SpecialPage{
 
 		}
 		$html .= '</table>';
+		$this->getOutput()->addHTML( $html );
+	}
+
+	function showChangeHistoryForm() {
+		$from = $this->getRequest()->getVal( 'from_date', null );
+		$to = $this->getRequest()->getVal( 'to_date', null );
+
+		$formDescriptor = [
+			'from_date' => [
+				'type' => 'date',
+				'name' => 'from_date',
+				'label' => 'From Date',
+				'default' => $from,
+			],
+			'to_date' => [
+				'type' => 'date',
+				'name' => 'to_date',
+				'label' => 'To Date',
+				'default' => $to,
+			],
+		];
+
+		$htmlForm = new HTMLForm( $formDescriptor, $this->getContext() );
+		$htmlForm->setFormIdentifier( 'filter_by_date' );
+		$htmlForm
+			->setSubmitText( 'Filter' )
+			->setSubmitCallback( [ $this, 'showChangeHistory' ] )
+			->prepareForm()
+			->displayForm( false );
+	}
+
+	function showChangeHistory() {
+		$from = $this->getRequest()->getVal( 'from_date', null );
+		$to = $this->getRequest()->getVal( 'to_date', null );
+		if ( empty( $from ) || empty( $to ) ) {
+			return;
+		}
+
+		$from_date = DateTime::createFromFormat( 'Y-m-d', $from )->getTimestamp();
+		$to_date = DateTime::createFromFormat( 'Y-m-d', $to )->getTimestamp();
+
+		$dbr = wfGetDB( DB_REPLICA );
+
+		$res = $dbr->select(
+			"pq_score_log",
+			'*',
+			[ "timestamp > $from_date AND timestamp < $to_date" ],
+			__METHOD__
+		);
+
+		$improvements = 0;
+		$declines = 0;
+		foreach( $res as $row ) {
+			if ( $row->new_score > 10 && $row->old_score < 10 ) {
+				$declines++;
+			} else if ( $row->new_score < 10 && $row->old_score > 10 ) {
+				$improvements++;
+			}
+		}
+
+		$html = '
+			<table class="wikitable">
+			<tr>
+				<th>
+					Metric
+				</th>
+				<th>
+					Value
+				</th>
+			';
+		$page = 'Special:PageQuality/reports/declines';
+		$title = Title::newFromText( $page );
+		$link = Linker::link( $title, $declines );
+
+		$html .= '
+			<tr>
+				<td>
+					'. wfMessage( "declining_pages" ) .'
+				</td>
+				<td>
+					'. $link .'
+				</td>
+			</tr>';
+
+		$page = 'Special:PageQuality/reports/improvements';
+		$title = Title::newFromText( $page );
+		$link = Linker::link( $title, $improvements );
+
+		$html .= '
+			<tr>
+				<td>
+					'. wfMessage( "improving_pages" ) .'
+				</td>
+				<td>
+					'. $link .'
+				</td>
+			</tr>';
+
+		$html .= '
+			</table>
+		';
+
 		$this->getOutput()->addHTML( $html );
 	}
 

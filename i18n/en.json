@@ -10,6 +10,7 @@
 	"pq_settings_title" : "Page Quality Settings",
 	"pq_maintenance" : "Maintenance",
 	"pq_reports" : "Reports",
+	"pq_history" : "Score History",
 	"pag_scorer_stop_words" : "Use of Blocked Expressions",
 	"pag_scorer_stop_words_desc" : "Use of BLocked Expressions",
 	"pag_scorer_sentence_len" : "Max words in a Sentence",
@@ -36,6 +37,8 @@
 	"pq_quality_score_link": "Quality Score",
 	"total_scanned_pages": "Total Scanned Pages",
 	"red_scanned_pages": "Red Scanned Pages",
+	"declining_pages": "Declining Pages",
+	"improving_pages": "Improving Pages",
 	"yellow_scanned_pages": "Yellow Scanned Pages",
 	"green_scanned_pages": "Green Scanned Pages",
 	"scorer_type_count": "Pages with issue $1"

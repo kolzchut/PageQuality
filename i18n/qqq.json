@@ -10,6 +10,7 @@
 	"pq_settings_title" : "Page Quality Settings",
 	"pq_maintenance" : "Maintenance",
 	"pq_reports" : "Reports",
+	"pq_history" : "Score History",
 	"pag_scorer_stop_words" : "Use of Blocked Expressions",
 	"pag_scorer_stop_words_desc" : "Use of BLocked Expressions",
 	"pag_scorer_sentence_len" : "Max words in a Sentence",
