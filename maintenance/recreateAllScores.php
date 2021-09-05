@@ -65,7 +65,7 @@ class recreateAllScores extends Maintenance {
 			}
 			foreach ( $res as $row ) {
 				$title = Title::makeTitle( $row->page_namespace, $row->page_title );
-				PageQualityScorer::runScorerForPage( $title, true );
+				PageQualityScorer::runScorerForPage( $title, "", true );
 				$startId = $row->page_id;
 			}
 		}
