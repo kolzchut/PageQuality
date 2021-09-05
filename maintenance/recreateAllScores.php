@@ -47,7 +47,7 @@ class recreateAllScores extends Maintenance {
 	}
 
 	public function execute() {
-		$this->dbr = $this->getDB( DB_REPLICA );
+		$dbr = $this->getDB( DB_REPLICA );
 		$startId = 0;
 		while ( true ) {
 			$res = $dbr->select( 'page',
