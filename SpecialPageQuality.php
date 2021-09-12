@@ -208,7 +208,7 @@ class SpecialPageQuality extends SpecialPage{
 
 
 		$html = '
-			<table class="wikitable">
+			<table class="wikitable sortable">
 			<tr>
 				<th>
 					' . $this->msg('pq_report_pagename' )->escaped() . '
@@ -330,7 +330,7 @@ class SpecialPageQuality extends SpecialPage{
 		}
 
 		$html = '
-			<table class="wikitable">
+			<table class="wikitable sortable">
 			<tr>
 				<th>
 					' . $this->msg( 'pq_report_metric' )->escaped() . '
@@ -410,7 +410,7 @@ class SpecialPageQuality extends SpecialPage{
 
 
 		$html = '
-			<table class="wikitable">
+			<table class="wikitable sortable">
 			<tr>
 				<th>
 					' . $this->msg( 'pq_report_metric' )->escaped() . '
