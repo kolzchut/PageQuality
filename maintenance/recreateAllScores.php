@@ -50,9 +50,9 @@ class recreateAllScores extends Maintenance {
 		$this->dbr = $this->getDB( DB_REPLICA );
 		$startId = 0;
 		while ( true ) {
-			$res = $dbr->select( 'page',
+			$res = $this->dbr->select( 'page',
 				[ 'page_id', 'page_namespace', 'page_title' ],
-				[ 'page_id > ' . $dbr->addQuotes( $startId ) ],
+				[ 'page_id > ' . $this->dbr->addQuotes( $startId ) ],
 				__METHOD__,
 				[
 					'LIMIT' => 20,
