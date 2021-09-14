@@ -118,8 +118,10 @@ abstract class PageQualityScorer{
 	}
 
 	public static function runScorerForPage( $title, $page_html = "", $automated_run = false ) {
-		$pageObj = WikiPage::factory( $title );
-		$page_html = $pageObj->getContent( Revision::RAW )->getParserOutput( $title )->getText();
+		if ( empty( $page_html ) ) {
+			$pageObj = WikiPage::factory( $title );
+			$page_html = $pageObj->getContent( Revision::RAW )->getParserOutput( $title )->getText();
+		}
 		PageQualityScorer::loadAllScoreres();
 		list( $score, $responses ) = PageQualityScorer::runAllScoreres( $page_html );
 
