@@ -244,7 +244,7 @@ class SpecialPageQuality extends SpecialPage{
 			$html .= '
 				<tr>
 					<td>
-						' . Title::newFromId( $page_id )->getText() . '
+						' . $this->getLinkRenderer()->makeKnownLink( Title::newFromId( $page_id ) ) . '
 					</td>
 					<td>
 						' . $page_data['score'] . '
