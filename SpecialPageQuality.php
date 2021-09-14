@@ -16,7 +16,7 @@ class SpecialPageQuality extends SpecialPage{
 		$links = [];
 		foreach ( $linkDefs as $name => $page ) {
 			$title = Title::newFromText( $page );
-			$links[] = Linker::link( $title, $this->msg( $name ) );
+			$links[] = $this->getLinkRenderer()->makeLink( $title, $this->msg( $name ) );
 		}
 		$linkStr = $this->getContext()->getLanguage()->pipeList( $links );
 		$this->getOutput()->setSubtitle( $linkStr );
@@ -341,7 +341,7 @@ class SpecialPageQuality extends SpecialPage{
 			';
 		$page = 'Special:PageQuality/reports/declines';
 		$title = Title::newFromText( $page );
-		$link = Linker::link( $title, $declines );
+		$link = $this->getLinkRenderer()->makeLink( $title, $declines );
 
 		$html .= '
 			<tr>
@@ -355,7 +355,7 @@ class SpecialPageQuality extends SpecialPage{
 
 		$page = 'Special:PageQuality/reports/improvements';
 		$title = Title::newFromText( $page );
-		$link = Linker::link( $title, $improvements );
+		$link = $this->getLinkRenderer()->makeLink( $title, $improvements );
 
 		$html .= '
 			<tr>
@@ -432,7 +432,7 @@ class SpecialPageQuality extends SpecialPage{
 
 		$page = 'Special:PageQuality/reports/red_all';
 		$title = Title::newFromText( $page );
-		$link = Linker::link( $title, $red_page_count );
+		$link = $this->getLinkRenderer()->makeLink( $title, $red_page_count );
 
 		$html .= '
 			<tr>
@@ -446,7 +446,7 @@ class SpecialPageQuality extends SpecialPage{
 
 		$page = 'Special:PageQuality/reports/yellow_all';
 		$title = Title::newFromText( $page );
-		$link = Linker::link( $title, $yellow_page_count );
+		$link = $this->getLinkRenderer()->makeLink( $title, $yellow_page_count );
 
 		$html .= '
 			<tr>
@@ -478,7 +478,7 @@ class SpecialPageQuality extends SpecialPage{
 			if ( array_key_exists( $type, $scorer_stats ) ) {
 				$page = "Special:PageQuality/reports/$type";
 				$title = Title::newFromText( $page );
-				$link = Linker::link( $title, $scorer_stats[$type] );
+				$link = $this->getLinkRenderer()->makeLink( $title, $scorer_stats[$type] );
 
 				$html .= '
 					<tr>
