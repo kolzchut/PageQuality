@@ -14,7 +14,7 @@ class PageQualityScorerReadability extends PageQualityScorer{
 		"para_length" => [
 			"name" => "pag_scorer_para_len",
 			"description" => "pag_scorer_para_len_desc",
-			"check_type" => "min",
+			"check_type" => "max",
 			"severity" => PageQualityScorer::YELLOW,
 			"default" => 40
 		],
