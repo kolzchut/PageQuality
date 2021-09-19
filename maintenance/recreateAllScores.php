@@ -40,6 +40,13 @@ class recreateAllScores extends Maintenance {
 	 */
 	public $dbr;
 
+	/**
+	 * List of article types to work on
+	 *
+	 * @var array
+	 */
+	public $articleType;
+
 	public function __construct() {
 		parent::__construct();
 
@@ -55,7 +62,14 @@ class recreateAllScores extends Maintenance {
 		);
 		$this->addOption(
 			'namespace',
-			'Namespace constant to work on. . Defaults to NS_MAIN',
+			'Namespace constant to work on. Defaults to NS_MAIN',
+			false,
+			true,
+			false
+		);
+		$this->addOption(
+			'articletype',
+			'A comma-separated list of article types to work on. Depends on extension:ArticleType.',
 			false,
 			true,
 			false
@@ -63,33 +77,21 @@ class recreateAllScores extends Maintenance {
 	}
 
 	public function execute() {
-		if ( $this->hasOption( 'namespace' ) && !defined( $this->getOption( 'namespace' ) ) ) {
-			$this->fatalError( "Expected a namespace constant, `". $this->getOption( 'namespace' ) . "` is unkown!" );
-		}
-
-		$this->dbr = $this->getDB( DB_REPLICA );
+		$dbr = $this->getDB( DB_REPLICA );
+		$basicQuery = $this->getBasicQuery();
 		$startId = $this->getOption( 'startid', 0 );
-		$namespace = $this->getOption( 'namespace' );
-		if ( $namespace ) {
-			$namespace = constant( $this->getOption( 'namespace' ) );
-		} else {
-			$namespace = NS_MAIN;
-		}
 		$totalNumRows = 0;
 
 		while ( true ) {
-			$res = $this->dbr->select( 'page',
-				[ 'page_id', 'page_namespace', 'page_title' ],
-				[
-					'page_id > ' . $this->dbr->addQuotes( $startId ),
-					'page_namespace = ' . $this->dbr->addQuotes( $namespace )
-				],
-				__METHOD__,
-				[
-					'LIMIT' => $this->getBatchSize(),
-					'ORDER BY' => 'page_id'
+			$query = $basicQuery;
+			$query['conds'][] = 'page_id > ' . $dbr->addQuotes( $startId );
 
-				]
+			$res = $dbr->select( $query['tables'],
+				$query['fields'],
+				$query['conds'],
+				__METHOD__,
+				$query['options'],
+				$query['join_conds']
 			);
 			if ( !$res->numRows() ) {
 				break;
@@ -107,6 +109,56 @@ class recreateAllScores extends Maintenance {
 		$this->output( "\nDone.\n" );
 	}
 
+	private function getBasicQuery() {
+		$dbr = $this->getDB( DB_REPLICA );
+
+		$query[ 'tables' ] = [ 'page' ];
+		$query[ 'fields' ]  = [ 'page_id', 'page_namespace', 'page_title' ];
+		$query[ 'options' ] = [
+			'LIMIT' => $this->getBatchSize(),
+			'ORDER BY' => 'page_id'
+		];
+		$query[ 'join_conds' ] = [];
+
+		// Handle namespaces
+		if ( $this->hasOption( 'namespace' ) && !defined( $this->getOption( 'namespace' ) ) ) {
+			$this->fatalError( "Expected a namespace constant, `". $this->getOption( 'namespace' ) . "` is unknown!" );
+		}
+		$namespace = $this->getOption( 'namespace' );
+		if ( $namespace ) {
+			$namespace = constant( $this->getOption( 'namespace' ) );
+		} else {
+			$namespace = NS_MAIN;
+		}
+		$query[ 'conds' ] = [
+			'page_namespace = ' . $dbr->addQuotes( $namespace )
+		];
+
+		// Handle article types
+		if ( $this->hasOption( 'articletype' ) ) {
+			if ( !ExtensionRegistry::getInstance()->isLoaded( 'ArticleType' ) ) {
+				$this->fatalError( 'Extension:ArticleType isn\'t enabled, so this option cannot be used' );
+			}
+			$this->articleType = array_filter( array_map(
+				'trim',
+				explode( ',', $this->getOption( 'articletype', '' ) )
+			) );
+
+			if ( !\MediaWiki\Extension\ArticleType\ArticleType::isValidArticleType( $this->articleType ) ) {
+				$this->fatalError(
+					"You have used an invalid article type. Valid types are:\n" .
+					implode( ', ', \MediaWiki\Extension\ArticleType\ArticleType::getValidArticleTypes() )
+				);
+			}
+
+			$articleTypeJoin = \MediaWiki\Extension\ArticleType\ArticleType::getJoin( $this->articleType );
+
+			$query = array_merge_recursive( $query, $articleTypeJoin );
+		}
+
+		return $query;
+	}
 }
+
 
 require_once RUN_MAINTENANCE_IF_MAIN;
