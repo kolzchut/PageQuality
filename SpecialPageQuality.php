@@ -16,7 +16,7 @@ class SpecialPageQuality extends SpecialPage{
 		$links = [];
 		foreach ( $linkDefs as $name => $page ) {
 			$title = Title::newFromText( $page );
-			$links[] = Linker::link( $title, $this->msg( $name ) );
+			$links[] = $this->getLinkRenderer()->makeLink( $title, $this->msg( $name ) );
 		}
 		$linkStr = $this->getContext()->getLanguage()->pipeList( $links );
 		$this->getOutput()->setSubtitle( $linkStr );
@@ -208,16 +208,16 @@ class SpecialPageQuality extends SpecialPage{
 
 
 		$html = '
-			<table class="wikitable">
+			<table class="wikitable sortable">
 			<tr>
 				<th>
-					Page Name
+					' . $this->msg('pq_report_pagename' )->escaped() . '
 				</th>
 				<th>
-					Score
+					' . $this->msg('pq_report_page_score' )->escaped() . '
 				</th>
 				<th>
-					Status
+					' . $this->msg('pq_report_page_status' )->escaped() . '
 				</th>
 			';
 		$all_checklist = PageQualityScorer::getAllChecksList();
@@ -226,7 +226,7 @@ class SpecialPageQuality extends SpecialPage{
 		foreach( $all_checklist as $type => $type_data ) {
 			$html .= '
 				<th>
-					'. wfMessage( $type_data['name'] ) .'
+					' . $this->msg( $type_data['name'] )->escaped() .'
 				</th>
 			';
 		}
@@ -237,16 +237,20 @@ class SpecialPageQuality extends SpecialPage{
 			if ( !array_key_exists( $page_id, $result ) ) {
 				continue;
 			}
+
+			// Messages used next: pq_report_page_status_red, pq_report_page_status_yellow, pq_report_page_status_green
+			$page_status_code = $page_data['score'] > 10 ? "red" : ( $page_data['score'] > 0 ? "yellow" : "green" );
+
 			$html .= '
 				<tr>
 					<td>
-						'. Title::newFromId( $page_id )->getText() .'
+						' . $this->getLinkRenderer()->makeKnownLink( Title::newFromId( $page_id ) ) . '
 					</td>
 					<td>
-						'. $page_data['score'] .'
+						' . $page_data['score'] . '
 					</td>
 					<td>
-						'. ( $page_data['score'] > 10 ? "Red" : ( $page_data['score'] > 0 ? "Yellow" : "Green" ) ) .'
+						' . $this->msg( 'pq_report_page_status_' . $page_status_code )->escaped() . '
 					</td>
 				';
 			foreach( $all_checklist as $type => $type_data ) {
@@ -326,23 +330,23 @@ class SpecialPageQuality extends SpecialPage{
 		}
 
 		$html = '
-			<table class="wikitable">
+			<table class="wikitable sortable">
 			<tr>
 				<th>
-					Metric
+					' . $this->msg( 'pq_report_metric' )->escaped() . '
 				</th>
 				<th>
-					Value
+					' . $this->msg( 'pq_report_num_pages' )->escaped() . '
 				</th>
 			';
 		$page = 'Special:PageQuality/reports/declines';
 		$title = Title::newFromText( $page );
-		$link = Linker::link( $title, $declines );
+		$link = $this->getLinkRenderer()->makeLink( $title, $declines );
 
 		$html .= '
 			<tr>
 				<td>
-					'. wfMessage( "declining_pages" ) .'
+					'. $this->msg( 'declining_pages' )->escaped() . '
 				</td>
 				<td>
 					'. $link .'
@@ -351,12 +355,12 @@ class SpecialPageQuality extends SpecialPage{
 
 		$page = 'Special:PageQuality/reports/improvements';
 		$title = Title::newFromText( $page );
-		$link = Linker::link( $title, $improvements );
+		$link = $this->getLinkRenderer()->makeLink( $title, $improvements );
 
 		$html .= '
 			<tr>
 				<td>
-					'. wfMessage( "improving_pages" ) .'
+					' . $this->msg( 'improving_pages' )->escaped() . '
 				</td>
 				<td>
 					'. $link .'
@@ -406,34 +410,34 @@ class SpecialPageQuality extends SpecialPage{
 
 
 		$html = '
-			<table class="wikitable">
+			<table class="wikitable sortable">
 			<tr>
 				<th>
-					Metric
+					' . $this->msg( 'pq_report_metric' )->escaped() . '
 				</th>
 				<th>
-					Value
+					' . $this->msg( 'pq_report_num_pages' )->escaped() . '
 				</th>
 			</tr>';
 
 		$html .= '
 			<tr>
 				<td>
-					'. wfMessage( "total_scanned_pages" ) .'
+					' . $this->msg( 'total_scanned_pages' )->escaped() . '
 				</td>
 				<td>
-					'. count( $page_stats ) .'
+					' . count( $page_stats ) .'
 				</td>
 			</tr>';
 
 		$page = 'Special:PageQuality/reports/red_all';
 		$title = Title::newFromText( $page );
-		$link = Linker::link( $title, $red_page_count );
+		$link = $this->getLinkRenderer()->makeLink( $title, $red_page_count );
 
 		$html .= '
 			<tr>
 				<td>
-					'. wfMessage( "red_scanned_pages" ) .'
+					' . $this->msg( 'red_scanned_pages' )->escaped() . '
 				</td>
 				<td>
 					'. $link .'
@@ -442,12 +446,12 @@ class SpecialPageQuality extends SpecialPage{
 
 		$page = 'Special:PageQuality/reports/yellow_all';
 		$title = Title::newFromText( $page );
-		$link = Linker::link( $title, $yellow_page_count );
+		$link = $this->getLinkRenderer()->makeLink( $title, $yellow_page_count );
 
 		$html .= '
 			<tr>
 				<td>
-					'. wfMessage( "yellow_scanned_pages" ) .'
+					'. $this->msg( 'yellow_scanned_pages' )->escaped() . '
 				</td>
 				<td>
 					'. $link .'
@@ -459,7 +463,7 @@ class SpecialPageQuality extends SpecialPage{
 		$html .= '
 			<tr>
 				<td>
-					'. wfMessage( "green_scanned_pages" ) .'
+					' . $this->msg( 'green_scanned_pages' )->escaped() . '
 				</td>
 				<td>
 					'. ( count( $page_stats ) - $red_page_count - $yellow_page_count ) .'
@@ -474,12 +478,12 @@ class SpecialPageQuality extends SpecialPage{
 			if ( array_key_exists( $type, $scorer_stats ) ) {
 				$page = "Special:PageQuality/reports/$type";
 				$title = Title::newFromText( $page );
-				$link = Linker::link( $title, $scorer_stats[$type] );
+				$link = $this->getLinkRenderer()->makeLink( $title, $scorer_stats[$type] );
 
 				$html .= '
 					<tr>
 						<td>
-							'. wfMessage( "scorer_type_count", wfMessage( $type_data['name'] ) ) .'
+							' . $this->msg( "scorer_type_count", $this->msg( $type_data['name'] ) )->escaped() . '
 						</td>
 						<td>
 							'. $link .'

@@ -43,19 +43,50 @@ class recreateAllScores extends Maintenance {
 	public function __construct() {
 		parent::__construct();
 
+		$this->setBatchSize( 20 );
+
 		$this->addDescription( "Recreate page quality scores for all pages." );
+		$this->addOption(
+			'startid',
+			'The id to start from',
+			false,
+			true,
+			's'
+		);
+		$this->addOption(
+			'namespace',
+			'Namespace constant to work on. . Defaults to NS_MAIN',
+			false,
+			true,
+			false
+		);
 	}
 
 	public function execute() {
-		$dbr = $this->getDB( DB_REPLICA );
-		$startId = 0;
+		if ( $this->hasOption( 'namespace' ) && !defined( $this->getOption( 'namespace' ) ) ) {
+			$this->fatalError( "Expected a namespace constant, `". $this->getOption( 'namespace' ) . "` is unkown!" );
+		}
+
+		$this->dbr = $this->getDB( DB_REPLICA );
+		$startId = $this->getOption( 'startid', 0 );
+		$namespace = $this->getOption( 'namespace' );
+		if ( $namespace ) {
+			$namespace = constant( $this->getOption( 'namespace' ) );
+		} else {
+			$namespace = NS_MAIN;
+		}
+		$totalNumRows = 0;
+
 		while ( true ) {
-			$res = $dbr->select( 'page',
+			$res = $this->dbr->select( 'page',
 				[ 'page_id', 'page_namespace', 'page_title' ],
-				[ 'page_id > ' . $dbr->addQuotes( $startId ) ],
+				[
+					'page_id > ' . $this->dbr->addQuotes( $startId ),
+					'page_namespace = ' . $this->dbr->addQuotes( $namespace )
+				],
 				__METHOD__,
 				[
-					'LIMIT' => 20,
+					'LIMIT' => $this->getBatchSize(),
 					'ORDER BY' => 'page_id'
 
 				]
@@ -63,12 +94,17 @@ class recreateAllScores extends Maintenance {
 			if ( !$res->numRows() ) {
 				break;
 			}
+			$totalNumRows = $totalNumRows + $res->numRows();
 			foreach ( $res as $row ) {
-				$title = Title::makeTitle( $row->page_namespace, $row->page_title );
+				$title = Title::newFromRow( $row );
 				PageQualityScorer::runScorerForPage( $title, "", true );
 				$startId = $row->page_id;
 			}
+
+			$this->output( "Processed {$totalNumRows} titles, ending in {$startId}\n" );
 		}
+
+		$this->output( "\nDone.\n" );
 	}
 
 }
