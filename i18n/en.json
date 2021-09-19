@@ -42,7 +42,7 @@
 	"pag_scorer_callout_number" : "Callouts",
 	"pq_occurance": "$1 {{PLURAL:$1|Occurrence|Occurrences}} Found",
 	"pq_num_issues": "$1 {{PLURAL:$1|Issue|Issues}}",
-	"pq_quality_score_link": "Quality Score",
+	"pq_quality_score_link": "Page Issues",
 	"total_scanned_pages": "Total Scanned Pages",
 	"red_scanned_pages": "Red Scanned Pages",
 	"yellow_scanned_pages": "Yellow Scanned Pages",

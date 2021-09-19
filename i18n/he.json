@@ -42,7 +42,7 @@
 	"pag_scorer_callout_number": "תיבות הערה",
 	"pq_occurance": "{{PLURAL:$1|נמצא מקרה אחד|נמצאו $1 מקרים}}",
 	"pq_num_issues": "{{PLURAL:$1|בעיה אחת|$1 בעיות}}",
-	"pq_quality_score_link": "ציון איכות",
+	"pq_quality_score_link": "בעיות בדף",
 	"total_scanned_pages": "סה\"כ דפים שנסרקו",
 	"red_scanned_pages": "דפים אדומים",
 	"yellow_scanned_pages": "דפים צהובים",
