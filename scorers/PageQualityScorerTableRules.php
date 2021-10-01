@@ -31,13 +31,13 @@ class PageQualityScorerTableRules extends PageQualityScorer{
 	    		$row_count++;
 	    		$column_count = max( $tr_node->getElementsByTagName('td')->length, $column_count );
 	    	}
-			if ( $column_count > $this->getSetting( "table_columns" ) ) {
+			if ( $column_count > self::getSetting( "table_columns" ) ) {
 				$response['table_columns'][] = [
 					"score" => self::getCheckList()['table_columns']['severity'],
 					"example" => wfMessage( "pq_occurance", $column_count )
 				];
 			}
-			if ( $row_count < $this->getSetting( "table_rows" ) ) {
+			if ( $row_count < self::getSetting( "table_rows" ) ) {
 				$response['table_rows'][] = [
 					"score" => self::getCheckList()['table_rows']['severity'],
 					"example" => wfMessage( "pq_occurance", $row_count )

@@ -45,7 +45,7 @@ class PageQualityScorerReadability extends PageQualityScorer{
 	public function calculatePageScore() {
 		$response = [];
 
-		$blocked_expressions = explode( PHP_EOL, $this->getSetting( "blocked_expressions" ) );
+		$blocked_expressions = explode( PHP_EOL, self::getSetting( "blocked_expressions" ) );
 		foreach( $blocked_expressions as $blocked_expression ) {
 			$offset = 0;
 			while( ( $offset = strpos( strip_tags( self::getText() ), trim( $blocked_expression ), $offset ) ) !== false ) {
@@ -68,12 +68,12 @@ class PageQualityScorerReadability extends PageQualityScorer{
 			$wc = self::str_word_count_utf8( $pNode->nodeValue );
 
 			$score = "green";
-			if ( $wc >= $this->getSetting( "para_length_max" ) ) {
+			if ( $wc >= self::getSetting( "para_length_max" ) ) {
 				$response['para_length_max'][] = [
 					"score" => self::getCheckList()['para_length_max']['severity'],
 					"example" => mb_substr( $pNode->nodeValue, 0, 50)
 				];
-			} else if ( $wc >= $this->getSetting( "para_length" ) ) {
+			} else if ( $wc >= self::getSetting( "para_length" ) ) {
 				$response['para_length'][] = [
 					"score" => self::getCheckList()['para_length']['severity'],
 					"example" => mb_substr( $pNode->nodeValue, 0, 50)
@@ -84,12 +84,12 @@ class PageQualityScorerReadability extends PageQualityScorer{
 			foreach( $sentences as $sentence ) {
 				$wc = self::str_word_count_utf8( $sentence );
 
-				if ( $wc >= $this->getSetting( "sentence_length_max" ) ) {
+				if ( $wc >= self::getSetting( "sentence_length_max" ) ) {
 					$response['sentence_length_max'][] = [
 						"score" => self::getCheckList()['sentence_length_max']['severity'],
 						"example" => mb_substr( $sentence, 0, 50)
 					];
-				} else if ( $wc >= $this->getSetting( "sentence_length" ) ) {
+				} else if ( $wc >= self::getSetting( "sentence_length" ) ) {
 					$response['sentence_length'][] = [
 						"score" => self::getCheckList()['sentence_length']['severity'],
 						"example" => mb_substr( $sentence, 0, 50)

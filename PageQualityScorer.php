@@ -17,6 +17,9 @@ abstract class PageQualityScorer{
 	public static $text = null;
 	public static $dom = null;
 
+	public static $general_setting_defaults = [
+		"red" => 10
+	];
 	/***
 	 * @link https://www.php.net/manual/en/function.str-word-count.php#107363
 	 *
@@ -46,9 +49,12 @@ abstract class PageQualityScorer{
 		}
 	}
 
-	public function getSetting( $type ) {
+	public static function getSetting( $type ) {
 		if ( array_key_exists($type, self::getSettingValues()) ) {
 			return self::$settings[$type];
+		}
+		if ( array_key_exists( $type, self::$general_setting_defaults ) ) {
+			return self::$general_setting_defaults[$type];
 		}
 		return self::getCheckList()[$type]['default'];
 	}

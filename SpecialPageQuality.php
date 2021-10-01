@@ -35,6 +35,45 @@ class SpecialPageQuality extends SpecialPage{
 		}
 	}
 
+	function getGeneralSettingTab( $save_link, $saved_settings_values ) {
+		$class_type = "General";
+		$value = "";
+		$type = "red";
+		if ( array_key_exists( $type, $saved_settings_values ) ) {
+			$value = $saved_settings_values[$type];
+		}
+		$settings_html = '
+			<div class="form-group">
+				<label for="'. $type .'">Red Score</label>
+				<input name="'. $type .'" type="text" class="form-control" placeholder="'. PageQualityScorer::$general_setting_defaults[$type] .'" value='. $value .'>
+			</div>
+		';
+		$tabsContent = '
+			<div id="settings_list" style="margin-top:10px;">
+				<form action="' . $save_link . '" method="post">
+					'. $settings_html .'
+					<button type="submit" class="btn btn-primary">Save</button>
+				</form>
+			</div>';
+
+
+		return new OOUI\TabPanelLayout( 'pq-settings-section-' . $class_type, [
+			'label' => $class_type,
+			'content' => new OOUI\FieldsetLayout( [
+				'classes' => [ 'mw-prefs-section-fieldset' ],
+				'id' => "pq-settings-$class_type",
+				'label' => $class_type,
+				'items' => [
+					new OOUI\Widget( [
+						'content' => new OOUI\HtmlSnippet( $tabsContent )
+					] ),
+				],
+			] ),
+			'expanded' => false,
+			'framed' => true,
+		] );
+
+	}
 	function showSettings() {
 		global $wgScript;
 
@@ -67,6 +106,20 @@ class SpecialPageQuality extends SpecialPage{
 					}
 				}
 			}
+			foreach( PageQualityScorer::$general_setting_defaults as $type => $default_value ) {
+				if ( $this->getRequest()->getVal( $type ) ) {
+					$dbw->delete(
+						'pq_settings',
+						array( 'setting' => $type ),
+						__METHOD__
+					);
+					$dbw->insert(
+						'pq_settings',
+						array( 'setting' => $type, 'value' => $this->getRequest()->getVal( $type ) ),
+						__METHOD__
+					);
+				}
+			}
 		}
 
 		$saved_settings_values = PageQualityScorer::getSettingValues();
@@ -77,7 +130,10 @@ class SpecialPageQuality extends SpecialPage{
 			<form action="' . $save_link . '" method="post">
 		';
 
-		$tabsContent = [];
+		$tabPanels = [];
+
+		$tabPanels[] = $this->getGeneralSettingTab( $save_link, $saved_settings_values );
+
 		foreach ( PageQualityScorer::getAllScorers() as $scorer_class ) {
 			$class_type = str_replace( "PageQualityScorer", "", $scorer_class );
 			$settings_html = "";
@@ -111,8 +167,7 @@ class SpecialPageQuality extends SpecialPage{
 				continue;
 			}
 
-			$save_link = $wgScript . '?title=Special:PageQuality/settings&save=1';
-			$tabsContent[ $class_type ] = '
+			$tabsContent = '
 				<div id="settings_list" style="margin-top:10px;">
 					<form action="' . $save_link . '" method="post">
 						'. $settings_html .'
@@ -129,7 +184,7 @@ class SpecialPageQuality extends SpecialPage{
 					'label' => $class_type,
 					'items' => [
 						new OOUI\Widget( [
-							'content' => new OOUI\HtmlSnippet( $tabsContent[ $class_type ] )
+							'content' => new OOUI\HtmlSnippet( $tabsContent )
 						] ),
 					],
 				] ),
@@ -186,14 +241,14 @@ class SpecialPageQuality extends SpecialPage{
 		if ( $report_type == "red_all" ) {
 			$result = [];
 			foreach( $page_stats as $page_id => $page_data ) {
-				if ( $page_data['score'] > 10 ) {
+				if ( $page_data['score'] > PageQualityScorer::getSetting( "red" ) ) {
 					$result[$page_id] = $page_data[$report_type];
 				}
 			}
 		} else if ( $report_type == "yellow_all" ) {
 			$result = [];
 			foreach( $page_stats as $page_id => $page_data ) {
-				if ( $page_data['score'] > 0 && $page_data['score'] <= 10 ) {
+				if ( $page_data['score'] > 0 && $page_data['score'] <= PageQualityScorer::getSetting( "red" ) ) {
 					$result[$page_id] = $page_data[$report_type];
 				}
 			}
@@ -239,7 +294,7 @@ class SpecialPageQuality extends SpecialPage{
 			}
 
 			// Messages used next: pq_report_page_status_red, pq_report_page_status_yellow, pq_report_page_status_green
-			$page_status_code = $page_data['score'] > 10 ? "red" : ( $page_data['score'] > 0 ? "yellow" : "green" );
+			$page_status_code = $page_data['score'] > PageQualityScorer::getSetting( "red" ) ? "red" : ( $page_data['score'] > 0 ? "yellow" : "green" );
 
 			$html .= '
 				<tr>
@@ -322,9 +377,9 @@ class SpecialPageQuality extends SpecialPage{
 		$improvements = 0;
 		$declines = 0;
 		foreach( $res as $row ) {
-			if ( $row->new_score > 10 && $row->old_score < 10 ) {
+			if ( $row->new_score > PageQualityScorer::getSetting( "red" ) && $row->old_score < PageQualityScorer::getSetting( "red" ) ) {
 				$declines++;
-			} else if ( $row->new_score < 10 && $row->old_score > 10 ) {
+			} else if ( $row->new_score < PageQualityScorer::getSetting( "red" ) && $row->old_score > PageQualityScorer::getSetting( "red" ) ) {
 				$improvements++;
 			}
 		}
@@ -405,8 +460,8 @@ class SpecialPageQuality extends SpecialPage{
 			}
 			$scorer_stats[$type]++;
 		}
-		$red_page_count = count( array_filter( array_column($page_stats, "score"), function( $a ) { return $a > 10; } ) );
-		$yellow_page_count = count( array_filter( array_column($page_stats, "score"), function( $a ) { return $a <= 10 && $a >0; } ) );
+		$red_page_count = count( array_filter( array_column($page_stats, "score"), function( $a ) { return $a > PageQualityScorer::getSetting( "red" ); } ) );
+		$yellow_page_count = count( array_filter( array_column($page_stats, "score"), function( $a ) { return $a <= PageQualityScorer::getSetting( "red" ) && $a >0; } ) );
 
 
 		$html = '
