@@ -14,6 +14,7 @@ CREATE TABLE /*_*/pq_settings (
   `setting` varchar(50),
   `value` varchar(50)
 );
+ALTER TABLE pq_settings ADD value_blob blob;
 
 CREATE INDEX /*i*/pq_settings_index ON /*_*/pq_settings (id);
 
@@ -27,5 +28,3 @@ CREATE TABLE /*_*/pq_issues (
 );
 
 CREATE INDEX /*i*/pq_issues_index ON /*_*/pq_issues (id);
-
-

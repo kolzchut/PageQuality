@@ -43,6 +43,9 @@ abstract class PageQualityScorer{
 	}
 
 	public static function loadAllScoreres() {
+		if ( !empty( self::$registered_classes ) ) {
+			return;
+		}
 		foreach ( glob( __DIR__ . "/scorers/*.php") as $filename ) {
 			include_once $filename;
 			self::$registered_classes[] = basename($filename, '.php');
@@ -78,9 +81,13 @@ abstract class PageQualityScorer{
 			__METHOD__
 		);
 
+		$all_checklist = PageQualityScorer::getAllChecksList();
 		self::$settings = [];
 		foreach( $res as $row ) {
 			self::$settings[$row->setting] = $row->value;
+			if ( array_key_exists( $row->setting, $all_checklist ) && array_key_exists( 'data_type', $all_checklist[$row->setting] ) && $all_checklist[$row->setting]['data_type'] == "list" ) {
+				self::$settings[$row->setting] = $row->value_blob;
+			}
 		}
 		return self::$settings;
 	}
@@ -116,6 +123,7 @@ abstract class PageQualityScorer{
 	}
 
 	public static function getAllChecksList() {
+		PageQualityScorer::loadAllScoreres();
 		$all_checklist = [];
 		foreach( self::$registered_classes as $scorer_class ) {
 			$all_checklist += $scorer_class::getCheckList();

@@ -92,6 +92,10 @@ class SpecialPageQuality extends SpecialPage{
 				$all_checklist = $scorer_class::getCheckList();
 				foreach( $all_checklist as $type => $check ) {
 					if ( $this->getRequest()->getVal( $type ) ) {
+						$value_field = "value";
+						if ( array_key_exists( 'data_type', $check ) && $check['data_type'] == "list" ) {
+							$value_field = "value_blob";
+						}
 						$dbw->delete(
 							'pq_settings',
 							array( 'setting' => $type ),
@@ -99,7 +103,7 @@ class SpecialPageQuality extends SpecialPage{
 						);
 						$dbw->insert(
 							'pq_settings',
-							array( 'setting' => $type, 'value' => $this->getRequest()->getVal( $type ) ),
+							array( 'setting' => $type, $value_field => $this->getRequest()->getVal( $type ) ),
 							__METHOD__
 						);
 					}

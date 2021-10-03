@@ -35,6 +35,11 @@ class PageQualityHooks {
 		        __DIR__ . '/page_quality.sql', true );
 		$updater->addExtensionTable( 'pq_score_log',
 		        __DIR__ . '/page_quality.sql', true );
+		$updater->addExtensionField(
+			'pq_settings',
+			'value_blob',
+			 __DIR__ . '/page_quality.sql'
+		);
 		return true;
 	}
 
