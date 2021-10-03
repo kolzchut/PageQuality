@@ -123,6 +123,28 @@ abstract class PageQualityScorer{
 		return $all_checklist;
 	}
 
+	public static function getScorForPage( $title ) {
+		PageQualityScorer::loadAllScoreres();
+
+		$dbr = wfGetDB( DB_REPLICA );
+		$res = $dbr->select(
+			"pq_issues",
+			'*',
+			["page_id" => $title->getArticleID()],
+			__METHOD__
+		);
+
+		$score = 0;
+		foreach( $res as $row ) {
+			$responses[$row->pq_type][] = [
+				"example" => $row->example,
+				"score" => $row->score
+			];
+			$score += $row->score;
+		}
+		return [$score, $responses];
+	}
+
 	public static function runScorerForPage( $title, $page_html = "", $automated_run = false ) {
 		if ( empty( $page_html ) ) {
 			$pageObj = WikiPage::factory( $title );

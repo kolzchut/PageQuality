@@ -20,7 +20,8 @@
 	},
 	"Hooks": {
 		"LoadExtensionSchemaUpdates": "PageQualityHooks::onLoadExtensionSchemaUpdate",
-		"BeforePageDisplay": "PageQualityHooks::onBeforePageDisplay"
+		"BeforePageDisplay": "PageQualityHooks::onBeforePageDisplay",
+		"PageSaveComplete": "PageQualityHooks::onPageSaveComplete"
     },
 	"MessagesDirs": {
 		"PageQuality": [

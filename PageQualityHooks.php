@@ -4,11 +4,20 @@ use MediaWiki\MediaWikiServices;
 
 class PageQualityHooks {
 
-	public static function onBeforePageDisplay( OutputPage $out, Skin $skin ) {
-		global $wgOut, $wgScript, $wgTitle;
+	public static function onPageSaveComplete( WikiPage $wikiPage, MediaWiki\User\UserIdentity $user, string $summary, int $flags, MediaWiki\Revision\RevisionRecord $revisionRecord, MediaWiki\Storage\EditResult $editResult ) {
+		global $wgOut, $wgTitle;
 
 		if ( $wgTitle->getNamespace() == 0 ) {
 			list( $score, $responses ) = PageQualityScorer::runScorerForPage( $wgOut->getTitle(), $wgOut->getHTML() );
+		}
+	}
+
+
+	public static function onBeforePageDisplay( OutputPage $out, Skin $skin ) {
+		global $wgOut, $wgTitle;
+
+		if ( $wgTitle->getNamespace() == 0 ) {
+			list( $score, $responses ) = PageQualityScorer::getScorForPage( $wgOut->getTitle() );
 
 			$wgOut->setIndicators( [
 				"pq_status" =>
