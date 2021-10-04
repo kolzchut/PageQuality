@@ -37,6 +37,9 @@ class SpecialPageQuality extends SpecialPage{
 	function getGeneralSettingTab( $save_link, $saved_settings_values ) {
 		$class_type = "General";
 		foreach( PageQualityScorer::$general_settings as $type => $data ) {
+			if ( !empty( $data['dependsOnExtension'] ) && !ExtensionRegistry::getInstance()->isLoaded( $data['dependsOnExtension'] ) ) {
+				continue;
+			}
 			$value = $data['default'];
 			if ( array_key_exists( $type, $saved_settings_values ) ) {
 				$value = $saved_settings_values[$type];

@@ -22,10 +22,11 @@ abstract class PageQualityScorer{
 			"name" => "pag_scorer_red_score",
 			"default" => 10,
 		],
-		"article_type" => [
+		"article_types" => [
 			"name" => "pag_scorer_article_type",
 			"data_type" => "list",
 			"default" => "",
+			"dependsOnExtension" => "ArticleType"
 		],
 	];
 	/***
@@ -98,6 +99,23 @@ abstract class PageQualityScorer{
 			}
 		}
 		return self::$settings;
+	}
+
+
+	public static function isPageScoreable( $page_id ) {
+		$article_types = PageQualityScorer::getSetting( "article_types" );
+		if ( !empty( $article_types ) && ExtensionRegistry::getInstance()->isLoaded( 'ArticleType' ) ) {
+			$dbr = $this->getDB( DB_REPLICA );
+			$propValue = $dbr->selectField( 'page_props', // table to use
+				'pp_value', // Field to select
+				[ 'pp_page' => $page_id, 'pp_propname' => "ArticleType" ], // where conditions
+				__METHOD__
+			);
+			if ( !in_array($propValue, $article_types) ) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
