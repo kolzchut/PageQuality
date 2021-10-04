@@ -36,17 +36,27 @@ class SpecialPageQuality extends SpecialPage{
 
 	function getGeneralSettingTab( $save_link, $saved_settings_values ) {
 		$class_type = "General";
-		$value = "";
-		$type = "red";
-		if ( array_key_exists( $type, $saved_settings_values ) ) {
-			$value = $saved_settings_values[$type];
+		foreach( PageQualityScorer::$general_settings as $type => $data ) {
+			$value = $data['default'];
+			if ( array_key_exists( $type, $saved_settings_values ) ) {
+				$value = $saved_settings_values[$type];
+			}
+			if ( array_key_exists( 'data_type', $data ) && $data['data_type'] == "list" ) {
+				$settings_html .= '
+					<div class="form-group">
+						<label for="'. $type .'">'. $this->msg( $data['name'] ) .' (Please add list values separated by newline)</label>
+						<textarea name="'. $type .'" class="form-control" placeholder="'. $data['default'] .'">'. $value .'</textarea>
+					</div>
+				';
+			} else {
+				$settings_html = '
+					<div class="form-group">
+						<label for="'. $type .'">'. $this->msg( $data['name'] ) .'</label>
+						<input name="'. $type .'" type="text" class="form-control" placeholder="'. $data['default'] .'" value='. $value .'>
+					</div>
+				';
+			}
 		}
-		$settings_html = '
-			<div class="form-group">
-				<label for="'. $type .'">Red Score</label>
-				<input name="'. $type .'" type="text" class="form-control" placeholder="'. PageQualityScorer::$general_setting_defaults[$type] .'" value='. $value .'>
-			</div>
-		';
 		$tabsContent = '
 			<div id="settings_list" style="margin-top:10px;">
 				<form action="' . $save_link . '" method="post">
@@ -109,8 +119,12 @@ class SpecialPageQuality extends SpecialPage{
 					}
 				}
 			}
-			foreach( PageQualityScorer::$general_setting_defaults as $type => $default_value ) {
+			foreach( PageQualityScorer::$general_settings as $type => $data ) {
 				if ( $this->getRequest()->getVal( $type ) ) {
+					$value_field = "value";
+					if ( array_key_exists( 'data_type', $check ) && $check['data_type'] == "list" ) {
+						$value_field = "value_blob";
+					}
 					$dbw->delete(
 						'pq_settings',
 						array( 'setting' => $type ),
@@ -118,7 +132,7 @@ class SpecialPageQuality extends SpecialPage{
 					);
 					$dbw->insert(
 						'pq_settings',
-						array( 'setting' => $type, 'value' => $this->getRequest()->getVal( $type ) ),
+						array( 'setting' => $type, $value_field => $this->getRequest()->getVal( $type ) ),
 						__METHOD__
 					);
 				}

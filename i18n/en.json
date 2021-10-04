@@ -49,5 +49,7 @@
 	"green_scanned_pages": "Green Scanned Pages",
 	"declining_pages": "Declining Pages",
 	"improving_pages": "Improving Pages",
-	"scorer_type_count": "Pages with issue $1"
+	"scorer_type_count": "Pages with issue $1",
+	"pag_scorer_red_score": "Min Score to classify a page as red",
+	"pag_scorer_article_type": "Article Types to run Page Scorer Checks"
 }
