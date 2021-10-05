@@ -34,7 +34,7 @@ class PageQualityHooks {
 	 *
 	 * @param DatabaseUpdater $updater
 	 */
-	function onLoadExtensionSchemaUpdate( DatabaseUpdater $updater ) {
+	public static function onLoadExtensionSchemaUpdate( DatabaseUpdater $updater ) {
 		$dir = __DIR__ . '/sql';
 
 		$updater->addExtensionTable( 'pq_issues', "$dir/pq_issues.sql" );
