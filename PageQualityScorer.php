@@ -102,16 +102,16 @@ abstract class PageQualityScorer{
 	}
 
 
-	public static function isPageScoreable( $page_id ) {
-		$article_types = PageQualityScorer::getSetting( "article_types" );
-		if ( !empty( $article_types ) && ExtensionRegistry::getInstance()->isLoaded( 'ArticleType' ) ) {
-			$dbr = $this->getDB( DB_REPLICA );
-			$propValue = $dbr->selectField( 'page_props', // table to use
-				'pp_value', // Field to select
-				[ 'pp_page' => $page_id, 'pp_propname' => "ArticleType" ], // where conditions
-				__METHOD__
-			);
-			if ( !in_array($propValue, $article_types) ) {
+	/**
+	 * @param Title $title
+	 *
+	 * @return bool
+	 */
+	public static function isPageScoreable( $title ) {
+		$relevantArticleTypes = PageQualityScorer::getSetting( "article_types" );
+		if ( !empty( $relevantArticleTypes ) && ExtensionRegistry::getInstance()->isLoaded( 'ArticleType' ) ) {
+			$articleType = \MediaWiki\Extension\ArticleType\ArticleType::getArticleType( $title );
+			if ( !in_array( $articleType, $relevantArticleTypes ) ) {
 				return false;
 			}
 		}
