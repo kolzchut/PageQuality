@@ -99,7 +99,9 @@ class recreateAllScores extends Maintenance {
 			$totalNumRows = $totalNumRows + $res->numRows();
 			foreach ( $res as $row ) {
 				$title = Title::newFromRow( $row );
-				PageQualityScorer::runScorerForPage( $title, "", true );
+				if ( PageQualityScorer::isPageScoreable( $title ) ) {
+					PageQualityScorer::runScorerForPage( $title, "", true );
+				}
 				$startId = $row->page_id;
 			}
 
@@ -133,28 +135,6 @@ class recreateAllScores extends Maintenance {
 		$query[ 'conds' ] = [
 			'page_namespace = ' . $dbr->addQuotes( $namespace )
 		];
-
-		// Handle article types
-		if ( $this->hasOption( 'articletype' ) ) {
-			if ( !ExtensionRegistry::getInstance()->isLoaded( 'ArticleType' ) ) {
-				$this->fatalError( 'Extension:ArticleType isn\'t enabled, so this option cannot be used' );
-			}
-			$this->articleType = array_filter( array_map(
-				'trim',
-				explode( ',', $this->getOption( 'articletype', '' ) )
-			) );
-
-			if ( !\MediaWiki\Extension\ArticleType\ArticleType::isValidArticleType( $this->articleType ) ) {
-				$this->fatalError(
-					"You have used an invalid article type. Valid types are:\n" .
-					implode( ', ', \MediaWiki\Extension\ArticleType\ArticleType::getValidArticleTypes() )
-				);
-			}
-
-			$articleTypeJoin = \MediaWiki\Extension\ArticleType\ArticleType::getJoin( $this->articleType );
-
-			$query = array_merge_recursive( $query, $articleTypeJoin );
-		}
 
 		return $query;
 	}
