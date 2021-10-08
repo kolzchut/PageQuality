@@ -28,18 +28,19 @@ class PageQualityHooks {
 		}
 	}
 
+	/**
+	 * LoadExtensionSchemaUpdate Hook handler
+	 * @see https://www.mediawiki.org/wiki/Manual:Hooks/LoadExtensionSchemaUpdate
+	 *
+	 * @param DatabaseUpdater $updater
+	 */
+	public static function onLoadExtensionSchemaUpdate( DatabaseUpdater $updater ) {
+		$dir = __DIR__ . '/sql';
 
-	function onLoadExtensionSchemaUpdate( $updater ) {
-		$updater->addExtensionTable( 'pq_settings',
-		        __DIR__ . '/page_quality.sql', true );
-		$updater->addExtensionTable( 'pq_score_log',
-		        __DIR__ . '/page_quality.sql', true );
-		$updater->addExtensionField(
-			'pq_settings',
-			'value_blob',
-			 __DIR__ . '/page_quality.sql'
-		);
-		return true;
+		$updater->addExtensionTable( 'pq_issues', "$dir/pq_issues.sql" );
+		$updater->addExtensionTable( 'pq_settings', "$dir/pq_settings.sql" );
+		$updater->addExtensionTable( 'pq_score_log', "$dir/pq_score_log.sql" );
+		$updater->addExtensionField( 'pq_settings', 'value_blob', "$dir/pq_settings_patch_add_value_blob.sql" );
 	}
 
 }
