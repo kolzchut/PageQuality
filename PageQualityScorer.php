@@ -214,6 +214,10 @@ abstract class PageQualityScorer{
 			__METHOD__
 		);
 
+		if ( !self::isPageScoreable( $title ) ) {
+			return [ 0, []];
+		}
+
 		foreach( $responses as $type => $type_responses ) {
 			foreach( $type_responses as $response ) {
 				$dbw->insert(

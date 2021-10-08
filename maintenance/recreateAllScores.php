@@ -99,9 +99,7 @@ class recreateAllScores extends Maintenance {
 			$totalNumRows = $totalNumRows + $res->numRows();
 			foreach ( $res as $row ) {
 				$title = Title::newFromRow( $row );
-				if ( PageQualityScorer::isPageScoreable( $title ) ) {
-					PageQualityScorer::runScorerForPage( $title, "", true );
-				}
+				PageQualityScorer::runScorerForPage( $title, "", true );
 				$startId = $row->page_id;
 			}
 
