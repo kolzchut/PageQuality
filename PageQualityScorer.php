@@ -62,13 +62,20 @@ abstract class PageQualityScorer{
 	}
 
 	public static function getSetting( $type ) {
+		$setting_value = "";
 		if ( array_key_exists($type, self::getSettingValues()) ) {
-			return self::$settings[$type];
+			$setting_value = self::$settings[$type];
+		} else if ( array_key_exists( $type, self::$general_settings ) ) {
+			$setting_value = self::$general_settings[$type]['default'];
+		} else {
+			$setting_value = self::getCheckList()[$type]['default'];
 		}
-		if ( array_key_exists( $type, self::$general_settings ) ) {
-			return self::$general_settings[$type]['default'];
+		if ( array_key_exists( $type, self::getCheckList() ) && self::getCheckList()[$type]['data_type'] == "list" ) {
+			$setting_value = explode( PHP_EOL, $setting_value );
+		} else if ( array_key_exists( $type, self::$general_settings ) && self::$general_settings[$type]["data_type"] == "list" ) {
+			$setting_value = explode( PHP_EOL, $setting_value );
 		}
-		return self::getCheckList()[$type]['default'];
+		return $setting_value;
 	}
 
 	public static function getAllScorers( ) {

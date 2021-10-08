@@ -45,7 +45,7 @@ class PageQualityScorerReadability extends PageQualityScorer{
 	public function calculatePageScore() {
 		$response = [];
 
-		$blocked_expressions = explode( PHP_EOL, self::getSetting( "blocked_expressions" ) );
+		$blocked_expressions = self::getSetting( "blocked_expressions" );
 		foreach( $blocked_expressions as $blocked_expression ) {
 			$offset = 0;
 			while( ( $offset = strpos( strip_tags( self::getText() ), trim( $blocked_expression ), $offset ) ) !== false ) {
