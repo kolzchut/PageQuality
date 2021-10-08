@@ -104,16 +104,16 @@ class SpecialPageQuality extends SpecialPage{
 			foreach( PageQualityScorer::getAllScorers() as $scorer_class ) {
 				$all_checklist = $scorer_class::getCheckList();
 				foreach( $all_checklist as $type => $check ) {
+					$value_field = "value";
+					if ( array_key_exists( 'data_type', $check ) && $check['data_type'] == "list" ) {
+						$value_field = "value_blob";
+					}
+					$dbw->delete(
+						'pq_settings',
+						array( 'setting' => $type ),
+						__METHOD__
+					);
 					if ( $this->getRequest()->getVal( $type ) ) {
-						$value_field = "value";
-						if ( array_key_exists( 'data_type', $check ) && $check['data_type'] == "list" ) {
-							$value_field = "value_blob";
-						}
-						$dbw->delete(
-							'pq_settings',
-							array( 'setting' => $type ),
-							__METHOD__
-						);
 						$dbw->insert(
 							'pq_settings',
 							array( 'setting' => $type, $value_field => $this->getRequest()->getVal( $type ) ),
