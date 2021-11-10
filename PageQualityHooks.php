@@ -16,7 +16,7 @@ class PageQualityHooks {
 
 			$out->setIndicators( [
 				"pq_status" =>
-					'<a class="page_quality_show" data-page_id="'.$out->getTitle()->getArticleID().'">' . $out->msg( 'pq_quality_score_link' )->escaped() . ' <span class="badge">'. $score .'</span></a>
+					'<a class="page_quality_show">' . $out->msg( 'pq_quality_score_link' )->escaped() . ' <span class="badge">'. $score .'</span></a>
 					'
 			]);
 			$out->addModules( 'ext.page_quality' );
