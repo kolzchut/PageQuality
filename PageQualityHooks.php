@@ -14,11 +14,17 @@ class PageQualityHooks {
 		if ( $out->getTitle()->getNamespace() === NS_MAIN && PageQualityScorer::isPageScoreable( $out->getTitle() ) ) {
 			list( $score, $responses ) = PageQualityScorer::getScorForPage( $out->getTitle() );
 
-			$out->setIndicators( [
-				"pq_status" =>
-					'<a class="page_quality_show">' . $out->msg( 'pq_quality_score_link' )->escaped() . ' <span class="badge">'. $score .'</span></a>
-					'
-			]);
+			$link = Html::rawElement(
+				'a',
+				[
+					'href' => '#',
+					'class' => 'page_quality_show',
+				],
+				$out->msg( 'pq_quality_score_link' )->escaped() . ' <span class="badge">'. $score .'</span>'
+			);
+
+			$out->setIndicators( [ 'pq_status' => $link ] );
+
 			$out->addModules( 'ext.page_quality' );
 			$out->addModules( 'ext.jquery_confirm' );
 		}
