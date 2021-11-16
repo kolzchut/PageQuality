@@ -48,23 +48,7 @@
 				"jquery.tablesorter",
 				"oojs-ui-widgets"
 			]
-		},
-	    "ext.bootstrap": {
-	        "scripts": [
-	                "resources/bootstrap.min.js"
-	        ],
-	        "styles": [
-	                "resources/bootstrap.min.css"
-	        ]
-	    },
-	    "ext.jquery_confirm": {
-	        "scripts": [
-	                "resources/jquery-confirm.min.js"
-	        ],
-	        "styles": [
-	                "resources/jquery-confirm.min.css"
-	        ]
-	    }
+		}
 	},
     "ResourceFileModulePaths": {
             "localBasePath": "",

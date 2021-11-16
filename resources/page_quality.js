@@ -1,6 +1,8 @@
 (function() {
 
-	var popup = false;
+	var $sidebar = false,
+		currentlyVisible = false,
+		$indicator = $( '#mw-indicator-pq_status' );
 
 	function failed(){
 		alert( "Failed doing last operation, check internet connection!" );
@@ -30,30 +32,40 @@
 		}
 	}
 
-	$(document).ready( function () {
-		$( '.page_quality_show' ).click( function() {
-			if ( popup !== false ) {
-				popup.close();
-			}
+	$( '[data-target="#pagequality-sidebar"]' ).click( toggleSidebar );
 
-			var api = new mw.Api();
-			api.get( {
-			    action: 'page_quality_api',
-			    pq_action: 'fetch_report_html',
-			    page_id: mw.config.get( 'wgArticleId' )
-			} ).done( function ( data ) {
-				popup = $.confirm({
-					boxWidth: '500px',
-					buttons: false,
-					draggable: false,
-					animation: 'none',
-				    content: data.result.html,
-				    title: data.result.title
-				});
-				success(data);
-			});
+	function createSidebar() {
+		$sidebar = $( '<div id="pagequality-sidebar"><header></header><div class="inner"></div></div>');
+		var api = new mw.Api();
+		api.get( {
+			action: 'page_quality_api',
+			pq_action: 'fetch_report_html',
+			page_id: mw.config.get( 'wgArticleId' )
+		} ).done( function ( data ) {
+			var $closeBtn = $( '<btn class="close" data-target="#pagequality-sidebar" aria-controls="pagequality-sidebar" aria-label="Close">&times;</btn>' );
+			$closeBtn.click( toggleSidebar );
+			$sidebar.find( '.inner' ).append( data.result.html );
+			$sidebar.find( 'header' ).append( [ $closeBtn, $indicator.clone() ] );
+			$sidebar.hide();
+			$sidebar.appendTo( 'body' );
+			success(data);
 
-		})
-	});
+			toggleSidebar();
+		});
+	}
+
+	function toggleSidebar() {
+		if ( !$sidebar ) {
+			createSidebar();
+			return;
+		}
+
+		if ( currentlyVisible ) {
+			$sidebar.hide();
+		} else {
+			$sidebar.show();
+		}
+		currentlyVisible = !currentlyVisible;
+	}
 
 } )();
