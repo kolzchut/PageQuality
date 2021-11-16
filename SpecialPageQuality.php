@@ -1,9 +1,11 @@
 <?php
 
-class SpecialPageQuality extends SpecialPage{
+class SpecialPageQuality extends SpecialPage {
 
-	function __construct() {
-		parent::__construct( 'PageQuality' );
+	protected $subpage = null;
+
+	function __construct( $name = 'PageQuality', $restriction = 'viewpagequality') {
+		parent::__construct( $name, $restriction );
 	}
 
 	function execute( $subpage ) {
@@ -20,6 +22,7 @@ class SpecialPageQuality extends SpecialPage{
 		$linkStr = $this->getContext()->getLanguage()->pipeList( $links );
 		$this->getOutput()->setSubtitle( $linkStr );
 
+		$this->subpage = $subpage;
 		if ( $subpage == "report" ) {
 			$this->showReport();
 		} else if ( $subpage == "settings" ) {
@@ -89,13 +92,12 @@ class SpecialPageQuality extends SpecialPage{
 	function showSettings() {
 		global $wgScript;
 
-		if ( !in_array( 'sysop', $this->getUser()->getEffectiveGroups() ) ) {
-			$this->getOutput()->addHTML( 'You do not have the necessary permissions to view this page.' );
-			return;
+		if ( $this->subpage === 'settings' ) {
+			$this->mRestriction = 'configpagequality';
+			$this->checkPermissions();;
 		}
 
 		$this->getOutput()->enableOOUI();
-
 		$this->getOutput()->setPageTitle( $this->msg( 'pq_settings_title' ) );
 
 		$dbw = wfGetDB( DB_MASTER );

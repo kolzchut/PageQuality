@@ -11,6 +11,7 @@ class PageQualityHooks {
 	}
 
 	public static function onBeforePageDisplay( OutputPage $out, Skin $skin ) {
+		if ( MediaWikiServices::getInstance()->getPermissionManager()->userHasRight( $out->getUser(), 'viewpagequality' ) ) {
 			if ( $out->getTitle()->getNamespace() === NS_MAIN && PageQualityScorer::isPageScoreable(
 					$out->getTitle()
 				) ) {
@@ -28,6 +29,7 @@ class PageQualityHooks {
 
 				$out->setIndicators( [ 'pq_status' => $link ] );
 				$out->addModules( 'ext.page_quality' );
+			}
 		}
 	}
 

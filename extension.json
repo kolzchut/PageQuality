@@ -12,6 +12,18 @@
 		"SpecialPageQuality": "SpecialPageQuality.php",
 		"PageQualityApi": "PageQualityApi.php"
 	},
+	"AvailableRights": [
+		"viewpagequality",
+		"configpagequality"
+	],
+	"GroupPermissions": {
+		"*": {
+			"viewpagequality": true
+		},
+		"sysop": {
+			"configpagequality": true
+		}
+	},
 	"APIModules": {
 		"page_quality_api": "PageQualityApi"
 	},

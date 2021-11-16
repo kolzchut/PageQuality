@@ -49,5 +49,9 @@
 	"green_scanned_pages": "דפים ירוקים",
 	"declining_pages": "דפים שהידרדרו",
 	"improving_pages": "דפים שהשתפרו",
-	"scorer_type_count": "דפים עם הבעיה $1"
+	"scorer_type_count": "דפים עם הבעיה $1",
+	"right-viewpagequality": "צפיה בדו\"ח בעיות לטיפול בעמוד",
+	"action-viewpagequality": "לצפות בדו\"ח בעיות לטיפול בעמוד",
+	"right-configpagequality": "עריכת הגדרות דו\"ח בעיות לטיפול בעמוד",
+	"action-configpagequality": "לערוך את הגדרות דו\"ח בעיות לטיפול בעמוד"
 }
