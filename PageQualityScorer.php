@@ -4,11 +4,6 @@ abstract class PageQualityScorer{
 	const YELLOW = 1;
 	const RED = 2;
 
-	public static $severity_bg_color = [
-		PageQualityScorer::YELLOW => "yellow",
-		PageQualityScorer::RED => "#f5c6cb"
-	];
-
 	abstract public function calculatePageScore();
 
 	public static $registered_classes = [];

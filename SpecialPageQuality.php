@@ -632,20 +632,24 @@ class SpecialPageQuality extends SpecialPage {
 				} else if ( $all_checklist[$type]['check_type'] == "do_not_exist" ) {
 					$message = wfMessage( "page_scorer_inexistence" );
 				}
+
+				$panelTypeBySeverity = $all_checklist[$type]['severity'] === PageQualityScorer::RED ? 'panel-danger' : 'panel-warning';
+
 				$html .= '
-					<div class="panel panel-danger">
+					<div class="panel ' . $panelTypeBySeverity . '">
 					<div class="panel-heading">
-						<span style="background:'. PageQualityScorer::$severity_bg_color[$all_checklist[$type]['severity']] .';color:#721c24;font-weight:600;text-transform:uppercase;">'. wfMessage( 'pq_num_issues' )->numParams( count( $score_responses ) ) . '</span> -
-						<span style="font-weight:600;">'. wfMessage( PageQualityScorer::getAllChecksList()[$type]['name'] ) .' - '. $message .'</span>
+						<span class="badge" data-raofz="15">' . count( $score_responses ) . '</span>&nbsp;
+						<span class="sr-only">'. wfMessage( 'pq_num_issues' )->numParams( count( $score_responses ) ) . ' </span>
+						<span>'. wfMessage( PageQualityScorer::getAllChecksList()[$type]['name'] ) .' - '. $message .'</span>
 					</div>
 				';
 				$html .= '
-				<div class="panel">
+				<div class="panel-body">
 						<ul class="list-group">
 				';
 				foreach( $score_responses as $response ) {
 					$html .= '
-							 <li class="">
+							 <li class="list-group-item">
 							    ' . $response['example'] . '...
 							  </li>
 					';
