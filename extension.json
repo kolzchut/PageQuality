@@ -40,6 +40,9 @@
 			"i18n"
 		]
 	},
+	"ExtensionMessagesFiles": {
+		"PageQualityAlias": "PageQuality.i18n.alias.php"
+	},
 	"ResourceModules": {
 		"ext.page_quality": {
 			"scripts": [
