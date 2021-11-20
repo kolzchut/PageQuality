@@ -11,16 +11,25 @@ class PageQualityHooks {
 	}
 
 	public static function onBeforePageDisplay( OutputPage $out, Skin $skin ) {
-		if ( $out->getTitle()->getNamespace() === NS_MAIN && PageQualityScorer::isPageScoreable( $out->getTitle() ) ) {
-			list( $score, $responses ) = PageQualityScorer::getScorForPage( $out->getTitle() );
+		if ( MediaWikiServices::getInstance()->getPermissionManager()->userHasRight( $out->getUser(), 'viewpagequality' ) ) {
+			if ( $out->getTitle()->getNamespace() === NS_MAIN && PageQualityScorer::isPageScoreable(
+					$out->getTitle()
+				) ) {
+				list( $score, $responses ) = PageQualityScorer::getScorForPage( $out->getTitle() );
 
-			$out->setIndicators( [
-				"pq_status" =>
-					'<a class="page_quality_show" data-page_id="'.$out->getTitle()->getArticleID().'">' . $out->msg( 'pq_quality_score_link' )->escaped() . ' <span class="badge">'. $score .'</span></a>
-					'
-			]);
-			$out->addModules( 'ext.page_quality' );
-			$out->addModules( 'ext.jquery_confirm' );
+				$link = Html::rawElement(
+					'a',
+					[
+						'href' => '#',
+						'data-target' => '#pagequality-sidebar'
+					],
+					$out->msg( 'pq_quality_score_link' )->escaped(
+					) . ' <span class="badge">' . $score . '</span>'
+				);
+
+				$out->setIndicators( [ 'pq_status' => $link ] );
+				$out->addModules( 'ext.page_quality' );
+			}
 		}
 	}
 

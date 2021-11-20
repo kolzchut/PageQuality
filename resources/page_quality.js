@@ -1,10 +1,12 @@
-(function( $ ) {
+(function() {
 
-	var popup = false;
+	var $sidebar = false,
+		currentlyVisible = false,
+		$indicator = $( '#mw-indicator-pq_status' );
 
 	function failed(){
 		alert( "Failed doing last operation, check internet connection!" );
-	};
+	}
 
 	function success(data){
 		if ( typeof( data.result ) != 'undefined' ) {
@@ -28,53 +30,42 @@
 				alert( "ERROR : " + data.error.info );
 			}
 		}
-	};
+	}
 
-	$(document).ready(function () { //jquery
-		$( '.page_quality_show' ).click( function() {
-			page_id = $(this).data('page_id');
+	$( '[data-target="#pagequality-sidebar"]' ).click( toggleSidebar );
 
-			if ( popup != false ) {
-				popup.close();
-			}
+	function createSidebar() {
+		$sidebar = $( '<div id="pagequality-sidebar"><header></header><div class="inner"></div></div>');
+		var api = new mw.Api();
+		api.get( {
+			action: 'page_quality_api',
+			pq_action: 'fetch_report_html',
+			page_id: mw.config.get( 'wgArticleId' )
+		} ).done( function ( data ) {
+			var $closeBtn = $( '<btn class="close" data-target="#pagequality-sidebar" aria-controls="pagequality-sidebar" aria-label="Close">&times;</btn>' );
+			$closeBtn.click( toggleSidebar );
+			$sidebar.find( '.inner' ).append( data.result.html );
+			$sidebar.find( 'header' ).append( [ $closeBtn, $indicator.clone() ] );
+			$sidebar.hide();
+			$sidebar.appendTo( 'body' );
+			success(data);
 
-			// popup = $.confirm({
-			// 	boxWidth: '500px',
-			// 	buttons: false,
-			// 	draggable: false,
-			//     content: function () {
-			//         var self = this;
-			// 		var api = new mw.Api();
-			// 		api.get( {
-			// 		    action: 'page_quality_api',
-			// 		    pq_action: 'fetch_report_html',
-			// 		    page_id: page_id
-			// 		} ).done( function ( data ) {
-			//             self.setContent(data.result.html);
-			//             self.setTitle(data.result.title);
-			// 			success(data);
-			// 		} );
-			//     }
-			// });
+			toggleSidebar();
+		});
+	}
 
-			var api = new mw.Api();
-			api.get( {
-			    action: 'page_quality_api',
-			    pq_action: 'fetch_report_html',
-			    page_id: page_id
-			} ).done( function ( data ) {
-				popup = $.confirm({
-					boxWidth: '500px',
-					buttons: false,
-					draggable: false,
-					animation: 'none',
-				    content: data.result.html,
-				    title: data.result.title
-				});
-				success(data);
-			});
+	function toggleSidebar() {
+		if ( !$sidebar ) {
+			createSidebar();
+			return;
+		}
 
-		})
-	});
+		if ( currentlyVisible ) {
+			$sidebar.hide();
+		} else {
+			$sidebar.show();
+		}
+		currentlyVisible = !currentlyVisible;
+	}
 
-} )( jQuery );
+} )();

@@ -1,19 +1,26 @@
-.jconfirm .jconfirm-holder{
-	padding:0px !important
+#pagequality-sidebar {
+	right: 0;
+	top: 0;
+	position: fixed;
+	z-index: 5;
+	max-width: 18em;
+	background-color: #fff;
 }
 
-.jconfirm{
-	top: auto;
-    bottom: 0;
-    left: auto;
-    right: 10px;
-    background-color: transparent;
-    border: none;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px 0 rgb(60 64 67 / 30%), 0 4px 8px 3px rgb(60 64 67 / 15%);
-    min-width: 360px;
+#pagequality-sidebar > header {
+	padding: 10px;
 }
 
-.jconfirm.jconfirm-white .jconfirm-bg, .jconfirm.jconfirm-light .jconfirm-bg{
-	background-color: transparent;
+#pagequality-sidebar > .inner {
+	background-color: #fff;
+	overflow-y: scroll;
+	height: calc( 100vh - 5em );
+}
+
+#pagequality-sidebar .panel-heading {
+	font-weight: bold;
+}
+
+#pagequality-sidebar .panel-body {
+	padding: 0; /* Padding on padding on padding... */
 }

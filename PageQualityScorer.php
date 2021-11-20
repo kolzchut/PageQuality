@@ -4,11 +4,6 @@ abstract class PageQualityScorer{
 	const YELLOW = 1;
 	const RED = 2;
 
-	public static $severity_bg_color = [
-		PageQualityScorer::YELLOW => "yellow",
-		PageQualityScorer::RED => "#f5c6cb"
-	];
-
 	abstract public function calculatePageScore();
 
 	public static $registered_classes = [];
@@ -62,18 +57,25 @@ abstract class PageQualityScorer{
 	}
 
 	public static function getSetting( $type ) {
-		$setting_value = "";
-		if ( array_key_exists($type, self::getSettingValues()) ) {
+		$setting_value = null;
+		if ( array_key_exists( $type, self::getSettingValues() ) ) {
 			$setting_value = self::$settings[$type];
 		} else if ( array_key_exists( $type, self::$general_settings ) ) {
 			$setting_value = self::$general_settings[$type]['default'];
 		} else {
 			$setting_value = self::getCheckList()[$type]['default'];
 		}
-		if ( array_key_exists( $type, self::getCheckList() ) && self::getCheckList()[$type]['data_type'] == "list" ) {
-			$setting_value = explode( PHP_EOL, $setting_value );
-		} else if ( array_key_exists( $type, self::$general_settings ) && self::$general_settings[$type]["data_type"] == "list" ) {
-			$setting_value = explode( PHP_EOL, $setting_value );
+
+		if ( $setting_value ) {
+			if ( array_key_exists( $type, self::getCheckList() ) &&
+			     self::getCheckList()[$type][ 'data_type' ] === 'list'
+			) {
+				$setting_value = explode( PHP_EOL, $setting_value );
+			} else if ( isset( self::$general_settings[$type]['data_type' ] ) &&
+			            self::$general_settings[$type]['data_type' ] === 'list'
+			) {
+				$setting_value = explode( PHP_EOL, $setting_value );
+			}
 		}
 		return $setting_value;
 	}
@@ -91,7 +93,7 @@ abstract class PageQualityScorer{
 		}
 		$dbr = wfGetDB( DB_REPLICA );
 		$res = $dbr->select(
-			"pq_settings",
+			'pq_settings',
 			'*',
 			array( true ),
 			__METHOD__
@@ -101,7 +103,7 @@ abstract class PageQualityScorer{
 		self::$settings = [];
 		foreach( $res as $row ) {
 			self::$settings[$row->setting] = $row->value;
-			if ( array_key_exists( $row->setting, $all_checklist ) && array_key_exists( 'data_type', $all_checklist[$row->setting] ) && $all_checklist[$row->setting]['data_type'] == "list" ) {
+			if ( array_key_exists( $row->setting, $all_checklist ) && array_key_exists( 'data_type', $all_checklist[$row->setting] ) && $all_checklist[$row->setting]['data_type'] === 'list' ) {
 				self::$settings[$row->setting] = $row->value_blob;
 			}
 		}
@@ -115,7 +117,7 @@ abstract class PageQualityScorer{
 	 * @return bool
 	 */
 	public static function isPageScoreable( $title ) {
-		$relevantArticleTypes = PageQualityScorer::getSetting( "article_types" );
+		$relevantArticleTypes = PageQualityScorer::getSetting( 'article_types' );
 		if ( !empty( $relevantArticleTypes ) && ExtensionRegistry::getInstance()->isLoaded( 'ArticleType' ) ) {
 			$articleType = \MediaWiki\Extension\ArticleType\ArticleType::getArticleType( $title );
 			if ( !in_array( $articleType, $relevantArticleTypes ) ) {
@@ -169,17 +171,17 @@ abstract class PageQualityScorer{
 
 		$dbr = wfGetDB( DB_REPLICA );
 		$res = $dbr->select(
-			"pq_issues",
+			'pq_issues',
 			'*',
-			["page_id" => $title->getArticleID()],
+			[ 'page_id' => $title->getArticleID()],
 			__METHOD__
 		);
 
 		$score = 0;
 		foreach( $res as $row ) {
 			$responses[$row->pq_type][] = [
-				"example" => $row->example,
-				"score" => $row->score
+				'example' => $row->example,
+				'score' => $row->score
 			];
 			$score += $row->score;
 		}
@@ -197,9 +199,9 @@ abstract class PageQualityScorer{
 		$dbw = wfGetDB( DB_MASTER );
 		$dbr = wfGetDB( DB_REPLICA );
 		$res = $dbr->select(
-			"pq_issues",
+			'pq_issues',
 			'score',
-			["page_id" => $title->getArticleID()],
+			[ 'page_id' => $title->getArticleID()],
 			__METHOD__
 		);
 		$old_score = 0;
@@ -210,7 +212,7 @@ abstract class PageQualityScorer{
 		}
 		$dbw->delete(
 			'pq_issues',
-			array( "page_id" => $title->getArticleID() ),
+			array( 'page_id' => $title->getArticleID() ),
 			__METHOD__
 		);
 
@@ -221,12 +223,12 @@ abstract class PageQualityScorer{
 		foreach( $responses as $type => $type_responses ) {
 			foreach( $type_responses as $response ) {
 				$dbw->insert(
-					"pq_issues",
+					'pq_issues',
 					[
-						"page_id" => $title->getArticleID(),
-						"pq_type" => $type,
-						"score" => $response['score'],
-						"example" => $response['example']
+						'page_id' => $title->getArticleID(),
+						'pq_type' => $type,
+						'score'   => $response['score'],
+						'example' => $response['example']
 					],
 					__METHOD__,
 					array( 'IGNORE' )
@@ -236,13 +238,13 @@ abstract class PageQualityScorer{
 
 		if ( !$automated_run && abs( $old_score - $score ) > 1 ) {
 			$dbw->insert(
-				"pq_score_log",
+				'pq_score_log',
 				[
-					"page_id" => $title->getArticleID(),
-					"revision_id" => $title->getLatestRevID(),
-					"new_score" => $score,
-					"old_score" => $old_score,
-					"timestamp" => (new DateTime())->getTimestamp()
+					'page_id'     => $title->getArticleID(),
+					'revision_id' => $title->getLatestRevID(),
+					'new_score'   => $score,
+					'old_score'   => $old_score,
+					'timestamp' => (new DateTime())->getTimestamp()
 				],
 				__METHOD__,
 				array( 'IGNORE' )

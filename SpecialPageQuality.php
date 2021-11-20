@@ -1,9 +1,11 @@
 <?php
 
-class SpecialPageQuality extends SpecialPage{
+class SpecialPageQuality extends SpecialPage {
 
-	function __construct() {
-		parent::__construct( 'PageQuality' );
+	protected $subpage = null;
+
+	function __construct( $name = 'PageQuality', $restriction = 'viewpagequality') {
+		parent::__construct( $name, $restriction );
 	}
 
 	function execute( $subpage ) {
@@ -20,6 +22,7 @@ class SpecialPageQuality extends SpecialPage{
 		$linkStr = $this->getContext()->getLanguage()->pipeList( $links );
 		$this->getOutput()->setSubtitle( $linkStr );
 
+		$this->subpage = $subpage;
 		if ( $subpage == "report" ) {
 			$this->showReport();
 		} else if ( $subpage == "settings" ) {
@@ -89,13 +92,12 @@ class SpecialPageQuality extends SpecialPage{
 	function showSettings() {
 		global $wgScript;
 
-		if ( !in_array( 'sysop', $this->getUser()->getEffectiveGroups() ) ) {
-			$this->getOutput()->addHTML( 'You do not have the necessary permissions to view this page.' );
-			return;
+		if ( $this->subpage === 'settings' ) {
+			$this->mRestriction = 'configpagequality';
+			$this->checkPermissions();;
 		}
 
 		$this->getOutput()->enableOOUI();
-
 		$this->getOutput()->setPageTitle( $this->msg( 'pq_settings_title' ) );
 
 		$dbw = wfGetDB( DB_MASTER );
@@ -630,20 +632,24 @@ class SpecialPageQuality extends SpecialPage{
 				} else if ( $all_checklist[$type]['check_type'] == "do_not_exist" ) {
 					$message = wfMessage( "page_scorer_inexistence" );
 				}
+
+				$panelTypeBySeverity = $all_checklist[$type]['severity'] === PageQualityScorer::RED ? 'panel-danger' : 'panel-warning';
+
 				$html .= '
-					<div class="panel panel-danger">
+					<div class="panel ' . $panelTypeBySeverity . '">
 					<div class="panel-heading">
-						<span style="background:'. PageQualityScorer::$severity_bg_color[$all_checklist[$type]['severity']] .';color:#721c24;font-weight:600;text-transform:uppercase;">'. wfMessage( 'pq_num_issues' )->numParams( count( $score_responses ) ) . '</span> -
-						<span style="font-weight:600;">'. wfMessage( PageQualityScorer::getAllChecksList()[$type]['name'] ) .' - '. $message .'</span>
+						<span class="badge" data-raofz="15">' . count( $score_responses ) . '</span>&nbsp;
+						<span class="sr-only">'. wfMessage( 'pq_num_issues' )->numParams( count( $score_responses ) ) . ' </span>
+						<span>'. wfMessage( PageQualityScorer::getAllChecksList()[$type]['name'] ) .' - '. $message .'</span>
 					</div>
 				';
 				$html .= '
-				<div class="panel">
+				<div class="panel-body">
 						<ul class="list-group">
 				';
 				foreach( $score_responses as $response ) {
 					$html .= '
-							 <li class="">
+							 <li class="list-group-item">
 							    ' . $response['example'] . '...
 							  </li>
 					';

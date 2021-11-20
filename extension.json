@@ -12,6 +12,18 @@
 		"SpecialPageQuality": "SpecialPageQuality.php",
 		"PageQualityApi": "PageQualityApi.php"
 	},
+	"AvailableRights": [
+		"viewpagequality",
+		"configpagequality"
+	],
+	"GroupPermissions": {
+		"*": {
+			"viewpagequality": true
+		},
+		"sysop": {
+			"configpagequality": true
+		}
+	},
 	"APIModules": {
 		"page_quality_api": "PageQualityApi"
 	},
@@ -27,6 +39,9 @@
 		"PageQuality": [
 			"i18n"
 		]
+	},
+	"ExtensionMessagesFiles": {
+		"PageQualityAlias": "PageQuality.i18n.alias.php"
 	},
 	"ResourceModules": {
 		"ext.page_quality": {
@@ -48,23 +63,7 @@
 				"jquery.tablesorter",
 				"oojs-ui-widgets"
 			]
-		},
-	    "ext.bootstrap": {
-	        "scripts": [
-	                "resources/bootstrap.min.js"
-	        ],
-	        "styles": [
-	                "resources/bootstrap.min.css"
-	        ]
-	    },
-	    "ext.jquery_confirm": {
-	        "scripts": [
-	                "resources/jquery-confirm.min.js"
-	        ],
-	        "styles": [
-	                "resources/jquery-confirm.min.css"
-	        ]
-	    }
+		}
 	},
     "ResourceFileModulePaths": {
             "localBasePath": "",
