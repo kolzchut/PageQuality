@@ -67,7 +67,7 @@ abstract class PageQualityScorer{
 		}
 
 		if ( $setting_value ) {
-			if ( array_key_exists( $type, self::getCheckList() ) &&
+			if ( isset( self::getCheckList()[$type][ 'data_type' ] ) &&
 			     self::getCheckList()[$type][ 'data_type' ] === 'list'
 			) {
 				$setting_value = explode( PHP_EOL, $setting_value );
