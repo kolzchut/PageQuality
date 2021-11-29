@@ -101,7 +101,7 @@ abstract class PageQualityScorer{
 		foreach( $res as $row ) {
 			self::$settings[$row->setting] = $row->value;
 			if ( array_key_exists( $row->setting, $all_checklist ) && array_key_exists( 'data_type', $all_checklist[$row->setting] ) && $all_checklist[$row->setting]['data_type'] === 'list' ) {
-				self::$settings[$row->setting] = $row->value_blob;
+				self::$settings[$row->setting] = $row->value_blob ?? null;
 			}
 		}
 		return self::$settings;
@@ -175,6 +175,7 @@ abstract class PageQualityScorer{
 		);
 
 		$score = 0;
+		$responses = [];
 		foreach( $res as $row ) {
 			$responses[$row->pq_type][] = [
 				'example' => $row->example,
