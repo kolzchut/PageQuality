@@ -67,14 +67,11 @@ abstract class PageQualityScorer{
 		}
 
 		if ( $setting_value ) {
-			if ( isset( self::getCheckList()[$type][ 'data_type' ] ) &&
-			     self::getCheckList()[$type][ 'data_type' ] === 'list'
-			) {
-				$setting_value = explode( PHP_EOL, $setting_value );
-			} else if ( isset( self::$general_settings[$type]['data_type' ] ) &&
-			            self::$general_settings[$type]['data_type' ] === 'list'
-			) {
-				$setting_value = explode( PHP_EOL, $setting_value );
+			$isList = ( isset( self::getCheckList()[$type][ 'data_type' ] ) && self::getCheckList()[$type][ 'data_type' ] === 'list' ) ||
+			          ( isset( self::$general_settings[$type]['data_type' ] ) && self::$general_settings[$type]['data_type' ] === 'list' );
+
+			if ( $isList ) {
+				$setting_value = preg_split( '/\R/', $setting_value ); // explode by line endings
 			}
 		}
 		return $setting_value;
