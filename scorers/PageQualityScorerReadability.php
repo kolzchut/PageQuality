@@ -46,19 +46,25 @@ class PageQualityScorerReadability extends PageQualityScorer{
 		$response = [];
 
 		$blocked_expressions = self::getSetting( "blocked_expressions" );
-		foreach( $blocked_expressions as $blocked_expression ) {
-			$offset = 0;
-			while( ( $offset = strpos( strip_tags( self::getText() ), trim( $blocked_expression ), $offset ) ) !== false ) {
-				$cut_off_start_offset = max( 0, $offset - 30 );
-				if ( strpos( strip_tags( self::getText() ), " ", $cut_off_start_offset ) !== false ) {
-					$cut_off_start_offset = strpos( strip_tags( self::getText() ), " ", $cut_off_start_offset );
-				}
+		if ( !empty( $blocked_expressions) ) {
+			foreach ( $blocked_expressions as $blocked_expression ) {
+				$offset = 0;
+				while ( ( $offset = strpos( strip_tags( self::getText() ), trim( $blocked_expression ), $offset ) ) !== false ) {
+					$cut_off_start_offset = max( 0, $offset - 30 );
+					if ( strpos( strip_tags( self::getText() ), " ", $cut_off_start_offset ) !== false ) {
+						$cut_off_start_offset = strpos( strip_tags( self::getText() ), " ", $cut_off_start_offset );
+					}
 
-				$response['blocked_expressions'][] = [
-					"score" => self::getCheckList()['blocked_expressions']['severity'],
-					"example" => str_replace( $blocked_expression, "<b>" . $blocked_expression . "</b>", substr( strip_tags( self::getText() ), $cut_off_start_offset, $cut_off_start_offset + strlen( $blocked_expression ) + 30 ) )
-				];
-				$offset += strlen( $blocked_expression );
+					$response[ 'blocked_expressions' ][] = [
+						"score" => self::getCheckList()[ 'blocked_expressions' ][ 'severity' ],
+						"example" => str_replace(
+							$blocked_expression,
+							"<b>" . $blocked_expression . "</b>",
+							substr( strip_tags( self::getText() ), $cut_off_start_offset, $cut_off_start_offset + strlen( $blocked_expression ) + 30	)
+						)
+					];
+					$offset += strlen( $blocked_expression );
+				}
 			}
 		}
 

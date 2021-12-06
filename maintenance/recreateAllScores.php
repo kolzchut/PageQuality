@@ -65,19 +65,27 @@ class recreateAllScores extends Maintenance {
 			'Namespace constant to work on. Defaults to NS_MAIN',
 			false,
 			true,
-			false
 		);
 		$this->addOption(
 			'articletype',
 			'A comma-separated list of article types to work on. Depends on extension:ArticleType.',
 			false,
-			true,
-			false
+			true
+		);
+		$this->addOption(
+			'reset',
+			'Delete all existing scores before starting again',
 		);
 	}
 
 	public function execute() {
 		$dbr = $this->getDB( DB_REPLICA );
+
+		if ( $this->hasOption( 'reset' ) ) {
+			$this->getDB( DB_PRIMARY )->delete( 'pq_issues', '*' );
+			$this->getDB( DB_PRIMARY )->delete( 'pq_score_log', '*' );
+		}
+
 		$basicQuery = $this->getBasicQuery();
 		$startId = $this->getOption( 'startid', 0 );
 		$totalNumRows = 0;
