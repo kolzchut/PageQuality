@@ -30,7 +30,7 @@ class SpecialPageQuality extends SpecialPage {
 		} else if ( $subpage == "history" ) {
 			$this->showChangeHistoryForm();
 			$this->showChangeHistory();
-		} else if ( $subpage == "reports" ) {
+		} else if ( $subpage == "reports" || $subpage == "" ) {
 			$this->showStatistics();
 		} else if ( strpos( $subpage, "reports" ) !== false ) {
 			$this->showListReport( substr($subpage, strrpos($subpage, '/') + 1) );
