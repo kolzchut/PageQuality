@@ -648,11 +648,13 @@ class SpecialPageQuality extends SpecialPage {
 						<ul class="list-group">
 				';
 				foreach( $score_responses as $response ) {
-					$html .= '
-							 <li class="list-group-item">
-							    ' . $response['example'] . '...
-							  </li>
-					';
+					if ( !empty( $response[ 'example' ] ) ) {
+						$html .= '
+								 <li class="list-group-item">
+								    ' . $response[ 'example' ] . '...
+								  </li>
+						';
+					}
 				}
 				$html .= '
 						</ul>
