@@ -50,7 +50,7 @@ class SpecialPageQuality extends SpecialPage {
 			if ( array_key_exists( 'data_type', $data ) && $data['data_type'] == "list" ) {
 				$settings_html .= '
 					<div class="form-group">
-						<label for="'. $type .'">'. $this->msg( $data['name'] ) .' (Please add list values separated by newline)</label>
+						<label for="'. $type .'">'. $this->msg( $data['name'] ) . ' ' . $this->msg( 'pq_settings_list_field_help' )->escaped() . '</label>
 						<textarea name="'. $type .'" class="form-control" placeholder="'. $data['default'] .'">'. $value .'</textarea>
 					</div>
 				';
@@ -67,7 +67,7 @@ class SpecialPageQuality extends SpecialPage {
 			<div id="settings_list" style="margin-top:10px;">
 				<form action="' . $save_link . '" method="post">
 					'. $settings_html .'
-					<button type="submit" class="btn btn-primary">Save</button>
+					<button type="submit" class="btn btn-primary">' . $this->msg( 'pq_settings_submit' )->escaped() . '</button>
 				</form>
 			</div>';
 
@@ -172,7 +172,7 @@ class SpecialPageQuality extends SpecialPage {
 				if ( array_key_exists( 'data_type', $data ) && $data['data_type'] == "list" ) {
 					$settings_html .= '
 						<div class="form-group">
-							<label for="'. $type .'">'. $this->msg( $data['name'] ) .' (Please add list values separated by newline)</label>
+							<label for="'. $type .'">'. $this->msg( $data['name'] ) . ' ' . $this->msg( 'pq_settings_list_field_help' )->escaped() . '</label>
 							<textarea name="'. $type .'" class="form-control" placeholder="'. $data['default'] .'">'. $value .'</textarea>
 						</div>
 					';
@@ -193,7 +193,7 @@ class SpecialPageQuality extends SpecialPage {
 				<div id="settings_list" style="margin-top:10px;">
 					<form action="' . $save_link . '" method="post">
 						'. $settings_html .'
-						<button type="submit" class="btn btn-primary">Save</button>
+						<button type="submit" class="btn btn-primary">' . $this->msg( 'pq_settings_submit' )->escaped() . '</button>
 					</form>
 				</div>';
 

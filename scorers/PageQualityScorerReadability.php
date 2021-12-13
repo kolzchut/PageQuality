@@ -20,7 +20,7 @@ class PageQualityScorerReadability extends PageQualityScorer{
 		],
 		"para_length_max" => [
 			"name" => "pag_scorer_para_len_max",
-			"description" => "pag_scorer_para_len_desc",
+			"description" => "pag_scorer_para_len_max_desc",
 			"check_type" => "max",
 			"severity" => PageQualityScorer::RED,
 			"default" => 60
@@ -34,7 +34,7 @@ class PageQualityScorerReadability extends PageQualityScorer{
 		],
 		"sentence_length_max" => [
 			"name" => "pag_scorer_sentence_len_max",
-			"description" => "pag_scorer_sentence_len_desc",
+			"description" => "pag_scorer_sentence_len_max_desc",
 			"check_type" => "max",
 			"severity" => PageQualityScorer::RED,
 			"default" => 30
