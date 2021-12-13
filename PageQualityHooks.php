@@ -5,16 +5,14 @@ use MediaWiki\MediaWikiServices;
 class PageQualityHooks {
 
 	public static function onPageSaveComplete( WikiPage $wikiPage, MediaWiki\User\UserIdentity $user, string $summary, int $flags, MediaWiki\Revision\RevisionRecord $revisionRecord, MediaWiki\Storage\EditResult $editResult ) {
-		if ( $wikiPage->getTitle()->getNamespace() === NS_MAIN && PageQualityScorer::isPageScoreable( $wikiPage->getTitle() ) ) {
+		if ( PageQualityScorer::isPageScoreable( $wikiPage->getTitle() ) ) {
 			list( $score, $responses ) = PageQualityScorer::runScorerForPage( $wikiPage->getTitle() );
 		}
 	}
 
 	public static function onBeforePageDisplay( OutputPage $out, Skin $skin ) {
 		if ( MediaWikiServices::getInstance()->getPermissionManager()->userHasRight( $out->getUser(), 'viewpagequality' ) ) {
-			if ( $out->getTitle()->getNamespace() === NS_MAIN && PageQualityScorer::isPageScoreable(
-					$out->getTitle()
-				) ) {
+			if ( PageQualityScorer::isPageScoreable( $out->getTitle() ) ) {
 				list( $score, $responses ) = PageQualityScorer::getScorForPage( $out->getTitle() );
 
 				$link = Html::rawElement(
