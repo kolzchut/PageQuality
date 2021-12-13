@@ -8,7 +8,7 @@ class PageQualityScorerReadability extends PageQualityScorer{
 			"description" => "pag_scorer_stop_words_desc",
 			"check_type" => "do_not_exist",
 			"data_type" => "list",
-			"severity" => PageQualityScorer::RED,
+			"severity" => PageQualityScorer::YELLOW,
 			"default" => ""
 		],
 		"para_length" => [
