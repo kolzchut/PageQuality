@@ -53,7 +53,7 @@
 	"pq_occurance_table_rows": "{{PLURAL:$1|נמצאה שורת יחידה|נמצאו $1 שורות}} בטבלה",
 	"pq_occurance_table_columns": "{{PLURAL:$1|נמצא טור יחיד|נמצאו $1 טורים}} בטבלה",
 	"pq_num_issues": "{{PLURAL:$1|בעיה אחת|$1 בעיות}}",
-	"pq_quality_score_link": "בעיות בדף",
+	"pq_quality_score_link": "ציון איכות",
 	"total_scanned_pages": "סה\"כ דפים שנסרקו",
 	"red_scanned_pages": "דפים אדומים",
 	"yellow_scanned_pages": "דפים צהובים",
