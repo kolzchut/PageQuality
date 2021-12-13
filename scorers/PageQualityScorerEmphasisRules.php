@@ -88,7 +88,7 @@ class PageQualityScorerEmphasisRules extends PageQualityScorer{
 		if ( !$emphasis_gov ) {
 			$response['emphasis_gov_symbol'][] = [
 				"score" => self::getCheckList()['emphasis_gov_symbol']['severity'],
-				"example" => wfMessage( "pq_occurance", 0 )
+				"example" => null
 			];
 		}
 		return $response;
