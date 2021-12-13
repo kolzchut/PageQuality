@@ -35,13 +35,14 @@ abstract class PageQualityScorer{
 	 */
 	function str_word_count_utf8( $text ) {
 		// We do the following because strtr just didn't work right in utf-8 text
-		$replacements = ":,[]={}|*,";
+		$replacements = "\n:,[]={}|*,";
 		$replacements = str_split( $replacements );
 		$replacements[]='،';
 
 		$text = str_replace( $replacements, ' ', $text );
 		$text = preg_replace( '/<!--[\s\S]*?-->/', '', $text );
 		$text = preg_replace( '/\s+/', ' ', $text );
+		$text = trim( $text );
 
 		return count( explode( " ", $text ) );
 	}
