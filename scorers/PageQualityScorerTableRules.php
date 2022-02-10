@@ -34,13 +34,13 @@ class PageQualityScorerTableRules extends PageQualityScorer{
 			if ( $column_count > self::getSetting( "table_columns" ) ) {
 				$response['table_columns'][] = [
 					"score" => self::getCheckList()['table_columns']['severity'],
-					"example" => wfMessage( "pq_occurance", $column_count )
+					"example" => wfMessage( "pq_occurance_table_columns", $column_count )
 				];
 			}
 			if ( $row_count < self::getSetting( "table_rows" ) ) {
 				$response['table_rows'][] = [
 					"score" => self::getCheckList()['table_rows']['severity'],
-					"example" => wfMessage( "pq_occurance", $row_count )
+					"example" => wfMessage( "pq_occurance_table_rows", $row_count )
 				];
 			}
 	    }

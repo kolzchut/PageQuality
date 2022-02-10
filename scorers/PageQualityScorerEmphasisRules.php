@@ -76,13 +76,13 @@ class PageQualityScorerEmphasisRules extends PageQualityScorer{
 		if ( $count < self::getSetting( "emphasis_lines_min" ) ) {
 			$response['emphasis_lines_min'][] = [
 				"score" => self::getCheckList()['emphasis_lines_min']['severity'],
-				"example" => wfMessage( "pq_occurance", $count )
+				"example" => wfMessage( "pq_occurance_emphasis_lines", $count )
 			];
 		}
 		if ( $count > self::getSetting( "emphasis_lines_num" ) ) {
 			$response['emphasis_lines_num'][] = [
 				"score" => self::getCheckList()['emphasis_lines_num']['severity'],
-				"example" => wfMessage( "pq_occurance", $count )
+				"example" => wfMessage( "pq_occurance_emphasis_lines", $count )
 			];
 		}
 		if ( !$emphasis_gov ) {
