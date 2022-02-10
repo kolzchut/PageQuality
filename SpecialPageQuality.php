@@ -65,10 +65,7 @@ class SpecialPageQuality extends SpecialPage {
 		}
 		$tabsContent = '
 			<div id="settings_list" style="margin-top:10px;">
-				<form action="' . $save_link . '" method="post">
 					'. $settings_html .'
-					<button type="submit" class="btn btn-primary">' . $this->msg( 'pq_settings_submit' )->escaped() . '</button>
-				</form>
 			</div>';
 
 
@@ -147,11 +144,6 @@ class SpecialPageQuality extends SpecialPage {
 		$saved_settings_values = PageQualityScorer::getSettingValues();
 
 		$save_link = $wgScript . '?title=Special:PageQuality/settings&save=1';
-		$html = '
-		<div class="" style="">
-			<form action="' . $save_link . '" method="post">
-		';
-
 		$tabPanels = [];
 
 		$tabPanels[] = $this->getGeneralSettingTab( $save_link, $saved_settings_values );
@@ -191,10 +183,7 @@ class SpecialPageQuality extends SpecialPage {
 
 			$tabsContent = '
 				<div id="settings_list" style="margin-top:10px;">
-					<form action="' . $save_link . '" method="post">
 						'. $settings_html .'
-						<button type="submit" class="btn btn-primary">' . $this->msg( 'pq_settings_submit' )->escaped() . '</button>
-					</form>
 				</div>';
 
 
@@ -230,7 +219,14 @@ class SpecialPageQuality extends SpecialPage {
 			'content' => $indexLayout
 		] );
 
-		$this->getOutput()->addHTML( $form );
+		$html = '
+		<form action="' . $save_link . '" method="post">
+			'. $form .'
+				<button type="submit" class="btn btn-primary">' . $this->msg( 'pq_settings_submit' )->escaped() . '</button>
+		</form>
+		';
+
+		$this->getOutput()->addHTML( $html );
 		$this->getOutput()->addModules( 'ext.page_quality.special' );
 
 	}
