@@ -10,9 +10,9 @@ class SpecialPageQuality extends SpecialPage {
 
 	function execute( $subpage ) {
 		$linkDefs = [
-			'pq_settings' => 'Special:PageQuality/settings',
 			'pq_reports' => 'Special:PageQuality/reports',
 			'pq_history' => 'Special:PageQuality/history',
+			'pq_settings' => 'Special:PageQuality/settings',
 		];
 		$links = [];
 		foreach ( $linkDefs as $name => $page ) {
