@@ -254,27 +254,46 @@ class SpecialPageQuality extends SpecialPage {
 				$page_stats[$page_id][$type] = 0;
 			}
 			$page_stats[$page_id][$type]++;
+
+			$log_row = $dbr->selectRow(
+				"pq_score_log",
+				'*',
+				[ "page_id" => $page_id ],
+				__METHOD__,
+				array( 'ORDER BY' => 'timestamp DESC', 'LIMIT' => 1 ),
+			);
+			$page_stats[$page_id]['old_score'] = $log_row->old_score;
 		}
 
+		$result = [];
 		if ( $report_type == "red_all" ) {
-			$result = [];
 			foreach( $page_stats as $page_id => $page_data ) {
 				if ( $page_data['score'] > PageQualityScorer::getSetting( "red" ) ) {
-					$result[$page_id] = $page_data[$report_type];
+					$result[$page_id] = 1;
 				}
 			}
 		} else if ( $report_type == "yellow_all" ) {
-			$result = [];
 			foreach( $page_stats as $page_id => $page_data ) {
 				if ( $page_data['score'] > 0 && $page_data['score'] <= PageQualityScorer::getSetting( "red" ) ) {
-					$result[$page_id] = $page_data[$report_type];
+					$result[$page_id] = 1;
+				}
+			}
+		} else if ( $report_type == "declines" ) {
+			foreach( $page_stats as $page_id => $page_data ) {
+				if ( $page_data['score'] > PageQualityScorer::getSetting( "red" ) && $page_data['old_score'] < PageQualityScorer::getSetting( "red" ) ) {
+					$result[$page_id] = 1;
+				}
+			}
+		} else if ( $report_type == "improvements" ) {
+			foreach( $page_stats as $page_id => $page_data ) {
+				if ( $page_data['score'] < PageQualityScorer::getSetting( "red" ) && $page_data['old_score'] > PageQualityScorer::getSetting( "red" ) ) {
+					$result[$page_id] = 1;
 				}
 			}
 		} else {
-			$result = [];
 			foreach( $page_stats as $page_id => $page_data ) {
 				if ( array_key_exists( $report_type, $page_data ) ) {
-					$result[$page_id] = $page_data[$report_type];
+					$result[$page_id] = 1;
 				}
 			}
 		}
@@ -288,6 +307,9 @@ class SpecialPageQuality extends SpecialPage {
 				</th>
 				<th>
 					' . $this->msg('pq_report_page_score' )->escaped() . '
+				</th>
+				<th>
+					' . $this->msg('pq_report_page_score_old' )->escaped() . '
 				</th>
 				<th>
 					' . $this->msg('pq_report_page_status' )->escaped() . '
@@ -321,6 +343,9 @@ class SpecialPageQuality extends SpecialPage {
 					</td>
 					<td>
 						' . $page_data['score'] . '
+					</td>
+					<td>
+						' . $page_data['old_score'] . '
 					</td>
 					<td>
 						' . $this->msg( 'pq_report_page_status_' . $page_status_code )->escaped() . '
@@ -389,19 +414,22 @@ class SpecialPageQuality extends SpecialPage {
 			"pq_score_log",
 			'*',
 			[ "timestamp > $from_date AND timestamp < $to_date" ],
-			__METHOD__
+			__METHOD__,
+			array( 'ORDER BY' => 'timestamp ASC' ),
 		);
 
-		$improvements = 0;
-		$declines = 0;
+		// We might have multiple entries for the same page within the selected time frame, the below code will ensure that only the latest log is considered in that case.
+		$improvements = [];
+		$declines = [];
 		foreach( $res as $row ) {
 			if ( $row->new_score > PageQualityScorer::getSetting( "red" ) && $row->old_score < PageQualityScorer::getSetting( "red" ) ) {
-				$declines++;
+				$declines[$row->page_id] = 1;
+				$improvements[$row->page_id] = 0;
 			} else if ( $row->new_score < PageQualityScorer::getSetting( "red" ) && $row->old_score > PageQualityScorer::getSetting( "red" ) ) {
-				$improvements++;
+				$improvements[$row->page_id] = 1;
+				$declines[$row->page_id] = 0;
 			}
 		}
-
 		$html = '
 			<table class="wikitable sortable">
 			<tr>
@@ -414,7 +442,7 @@ class SpecialPageQuality extends SpecialPage {
 			';
 		$page = 'Special:PageQuality/reports/declines';
 		$title = Title::newFromText( $page );
-		$link = $this->getLinkRenderer()->makeLink( $title, $declines );
+		$link = $this->getLinkRenderer()->makeLink( $title, array_sum( $declines ) );
 
 		$html .= '
 			<tr>
@@ -428,7 +456,7 @@ class SpecialPageQuality extends SpecialPage {
 
 		$page = 'Special:PageQuality/reports/improvements';
 		$title = Title::newFromText( $page );
-		$link = $this->getLinkRenderer()->makeLink( $title, $improvements );
+		$link = $this->getLinkRenderer()->makeLink( $title, array_sum( $improvements ) );
 
 		$html .= '
 			<tr>

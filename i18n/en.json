@@ -15,6 +15,7 @@
 	"pq_history" : "Score History",
 	"pq_report_pagename": "Page Name",
 	"pq_report_page_score": "Score",
+	"pq_report_page_score_old": "Old Score",
 	"pq_report_page_status": "Status",
 	"pq_report_page_status_red": "Red",
 	"pq_report_page_status_yellow": "Yellow",
