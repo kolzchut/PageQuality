@@ -233,6 +233,7 @@ class SpecialPageQuality extends SpecialPage {
 
 	function showListReport( $report_type ) {
 		PageQualityScorer::loadAllScoreres();
+		$all_checklist = PageQualityScorer::getAllChecksList();
 
 		$dbr = wfGetDB( DB_REPLICA );
 		$res = $dbr->select(
@@ -267,30 +268,35 @@ class SpecialPageQuality extends SpecialPage {
 
 		$result = [];
 		if ( $report_type == "red_all" ) {
+			$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_reports_of_type', $this->msg( 'red_scanned_pages' )->escaped() ) );
 			foreach( $page_stats as $page_id => $page_data ) {
 				if ( $page_data['score'] > PageQualityScorer::getSetting( "red" ) ) {
 					$result[$page_id] = 1;
 				}
 			}
 		} else if ( $report_type == "yellow_all" ) {
+			$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_reports_of_type', $this->msg( 'yellow_scanned_pages' )->escaped() ) );
 			foreach( $page_stats as $page_id => $page_data ) {
 				if ( $page_data['score'] > 0 && $page_data['score'] <= PageQualityScorer::getSetting( "red" ) ) {
 					$result[$page_id] = 1;
 				}
 			}
 		} else if ( $report_type == "declines" ) {
+			$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_reports_of_type', $this->msg( 'declining_pages' )->escaped() ) );
 			foreach( $page_stats as $page_id => $page_data ) {
 				if ( $page_data['score'] > PageQualityScorer::getSetting( "red" ) && $page_data['old_score'] < PageQualityScorer::getSetting( "red" ) ) {
 					$result[$page_id] = 1;
 				}
 			}
 		} else if ( $report_type == "improvements" ) {
+			$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_reports_of_type', $this->msg( 'improving_pages' )->escaped() ) );
 			foreach( $page_stats as $page_id => $page_data ) {
 				if ( $page_data['score'] < PageQualityScorer::getSetting( "red" ) && $page_data['old_score'] > PageQualityScorer::getSetting( "red" ) ) {
 					$result[$page_id] = 1;
 				}
 			}
 		} else {
+			$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_reports_of_type', $this->msg( $all_checklist[$report_type]['name'] )->escaped() ) );
 			foreach( $page_stats as $page_id => $page_data ) {
 				if ( array_key_exists( $report_type, $page_data ) ) {
 					$result[$page_id] = 1;
@@ -315,7 +321,6 @@ class SpecialPageQuality extends SpecialPage {
 					' . $this->msg('pq_report_page_status' )->escaped() . '
 				</th>
 			';
-		$all_checklist = PageQualityScorer::getAllChecksList();
 		$col = array_column( $all_checklist, "severity" );
 		array_multisort( $col, SORT_DESC, $all_checklist );
 		foreach( $all_checklist as $type => $type_data ) {
@@ -371,6 +376,8 @@ class SpecialPageQuality extends SpecialPage {
 	}
 
 	function showChangeHistoryForm() {
+		$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_history' ) );
+
 		$from = $this->getRequest()->getVal( 'from_date', null );
 		$to = $this->getRequest()->getVal( 'to_date', null );
 
@@ -477,6 +484,8 @@ class SpecialPageQuality extends SpecialPage {
 
 	function showStatistics() {
 		PageQualityScorer::loadAllScoreres();
+
+		$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_reports_dashboard' ) );
 
 		$dbr = wfGetDB( DB_REPLICA );
 
@@ -607,7 +616,7 @@ class SpecialPageQuality extends SpecialPage {
 		$page_id = $this->getRequest()->getVal('page_id');
 		$title = Title::newFromId( $page_id );
 
-		$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_report_for_title' ) . " " . $title->getText() );
+		$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_report_for_title', $title->getText() ) );
 
 		$this->getOutput()->addHTML( self::getPageQualityReportHtml( $page_id ) );
 	}
