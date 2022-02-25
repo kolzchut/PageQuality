@@ -405,13 +405,13 @@ class SpecialPageQuality extends SpecialPage {
 			'from_date' => [
 				'type' => 'date',
 				'name' => 'from_date',
-				'label' => 'From Date',
+				'label' => $this->msg( 'pg_history_form_from_date' ),
 				'default' => $from,
 			],
 			'to_date' => [
 				'type' => 'date',
 				'name' => 'to_date',
-				'label' => 'To Date',
+				'label' => $this->msg( 'pg_history_form_to_date' ),
 				'default' => $to,
 			],
 		];
@@ -419,7 +419,7 @@ class SpecialPageQuality extends SpecialPage {
 		$htmlForm = new HTMLForm( $formDescriptor, $this->getContext() );
 		$htmlForm->setFormIdentifier( 'filter_by_date' );
 		$htmlForm
-			->setSubmitText( 'Filter' )
+			->setSubmitText( $this->msg( 'pg_history_form_submit' ) )
 			->setSubmitCallback( [ $this, 'showChangeHistory' ] )
 			->prepareForm()
 			->displayForm( false );

@@ -66,5 +66,8 @@
 	"right-viewpagequality": "View page issues report",
 	"action-viewpagequality": "view page issues report",
 	"right-configpagequality": "Edit page issues report settings",
-	"action-configpagequality": "edit page issues report settings"
+	"action-configpagequality": "edit page issues report settings",
+	"pg_history_form_from_date" : "From Date",
+	"pg_history_form_to_date" : "To Date",
+	"pg_history_form_submit" : "Filter"
 }
