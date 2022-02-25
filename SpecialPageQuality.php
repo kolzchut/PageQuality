@@ -98,6 +98,7 @@ class SpecialPageQuality extends SpecialPage {
 		$this->getOutput()->setPageTitle( $this->msg( 'pq_settings_title' ) );
 
 		$dbw = wfGetDB( DB_MASTER );
+		$dbr = wfGetDB( DB_REPLICA );
 
 		if ( $this->getRequest()->getVal('save') ==  1 ) {
 			foreach( PageQualityScorer::getAllScorers() as $scorer_class ) {
@@ -138,6 +139,23 @@ class SpecialPageQuality extends SpecialPage {
 						__METHOD__
 					);
 				}
+			}
+			if ( $this->getRequest()->getVal('regenerate_scores') == "yes" ) {
+				$res = $dbr->select(
+					"pq_issues",
+					'*',
+					[true],
+					__METHOD__
+				);
+				$page_stats = [];
+				$jobs = [];
+				foreach( $res as $row ) {
+					$page_stats[$row->page_id] = 1;
+				}
+				foreach( $page_stats as $page_id => $dummy_value ) {
+					$jobs[] = new PageQualiyRefreshJob( Title::newFromId( $page_id ) );
+				}
+				JobQueueGroup::singleton()->push( $jobs );
 			}
 		}
 
@@ -222,6 +240,8 @@ class SpecialPageQuality extends SpecialPage {
 		$html = '
 		<form action="' . $save_link . '" method="post">
 			'. $form .'
+				<input type="checkbox" id="regenerate_scores" name="regenerate_scores" value="yes">
+				<label for="regenerate_scores"> '. $this->msg( "regenerate_scores_checkbox" ) .'</label><br>
 				<button type="submit" class="btn btn-primary">' . $this->msg( 'pq_settings_submit' )->escaped() . '</button>
 		</form>
 		';
