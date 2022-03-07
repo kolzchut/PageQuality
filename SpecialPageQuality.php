@@ -255,6 +255,9 @@ class SpecialPageQuality extends SpecialPage {
 		PageQualityScorer::loadAllScoreres();
 		$all_checklist = PageQualityScorer::getAllChecksList();
 
+		$from_date = $this->getRequest()->getVal( 'from_date', 0 );
+		$to_date = $this->getRequest()->getVal( 'to_date', 0 );
+
 		$dbr = wfGetDB( DB_REPLICA );
 		$res = $dbr->select(
 			"pq_issues",
@@ -275,7 +278,6 @@ class SpecialPageQuality extends SpecialPage {
 				$page_stats[$page_id][$type] = 0;
 			}
 			$page_stats[$page_id][$type]++;
-
 			$log_row = $dbr->selectRow(
 				"pq_score_log",
 				'*',
@@ -304,15 +306,32 @@ class SpecialPageQuality extends SpecialPage {
 		} else if ( $report_type == "declines" ) {
 			$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_reports_of_type', $this->msg( 'declining_pages' )->escaped() ) );
 			foreach( $page_stats as $page_id => $page_data ) {
-				if ( $page_data['score'] > PageQualityScorer::getSetting( "red" ) && $page_data['old_score'] < PageQualityScorer::getSetting( "red" ) ) {
-					$result[$page_id] = 1;
+
+				$log_rows = $dbr->select(
+					"pq_score_log",
+					'*',
+					[ "page_id" => $page_id, "timestamp > $from_date AND timestamp < $to_date" ],
+					__METHOD__
+				);
+				foreach( $log_rows as $log_row ) {
+					if ( $log_row->new_score > PageQualityScorer::getSetting( "red" ) && $log_row->old_score < PageQualityScorer::getSetting( "red" ) ) {
+						$result[$page_id] = 1;
+					}
 				}
 			}
 		} else if ( $report_type == "improvements" ) {
 			$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_reports_of_type', $this->msg( 'improving_pages' )->escaped() ) );
 			foreach( $page_stats as $page_id => $page_data ) {
-				if ( $page_data['score'] < PageQualityScorer::getSetting( "red" ) && $page_data['old_score'] > PageQualityScorer::getSetting( "red" ) ) {
-					$result[$page_id] = 1;
+				$log_rows = $dbr->select(
+					"pq_score_log",
+					'*',
+					[ "page_id" => $page_id, "timestamp > $from_date AND timestamp < $to_date" ],
+					__METHOD__
+				);
+				foreach( $log_rows as $log_row ) {
+					if ( $log_row->new_score < PageQualityScorer::getSetting( "red" ) && $log_row->old_score > PageQualityScorer::getSetting( "red" ) ) {
+						$result[$page_id] = 1;
+					}
 				}
 			}
 		} else {
@@ -428,12 +447,20 @@ class SpecialPageQuality extends SpecialPage {
 	function showChangeHistory() {
 		$from = $this->getRequest()->getVal( 'from_date', null );
 		$to = $this->getRequest()->getVal( 'to_date', null );
-		if ( empty( $from ) || empty( $to ) ) {
-			return;
+
+		$from_date = 0;
+		if ( !empty( $from ) ) {
+			$from_date = DateTime::createFromFormat( 'Y-m-d', $from )->getTimestamp();
 		}
 
-		$from_date = DateTime::createFromFormat( 'Y-m-d', $from )->getTimestamp();
-		$to_date = DateTime::createFromFormat( 'Y-m-d', $to )->getTimestamp();
+		$to_date = wfTimestamp();
+		if ( !empty( $to ) ) {
+			$to_date = DateTime::createFromFormat( 'Y-m-d', $to )->getTimestamp();
+		}
+
+		if ( $to_date <= $from_date ) {
+			return;
+		}
 
 		$dbr = wfGetDB( DB_REPLICA );
 
@@ -469,7 +496,7 @@ class SpecialPageQuality extends SpecialPage {
 			';
 		$page = 'Special:PageQuality/reports/declines';
 		$title = Title::newFromText( $page );
-		$link = $this->getLinkRenderer()->makeLink( $title, array_sum( $declines ) );
+		$link = $this->getLinkRenderer()->makeLink( $title, array_sum( $declines ), [], [ 'from_date' => $from_date, 'to_date' => $to_date ] );
 
 		$html .= '
 			<tr>
@@ -483,7 +510,7 @@ class SpecialPageQuality extends SpecialPage {
 
 		$page = 'Special:PageQuality/reports/improvements';
 		$title = Title::newFromText( $page );
-		$link = $this->getLinkRenderer()->makeLink( $title, array_sum( $improvements ) );
+		$link = $this->getLinkRenderer()->makeLink( $title, array_sum( $improvements ), [], [ 'from_date' => $from_date, 'to_date' => $to_date ] );
 
 		$html .= '
 			<tr>
