@@ -41,21 +41,21 @@ class PageQualityScorerReadability extends PageQualityScorer{
 		],
 	];
 
+	public $response = [];
 
 	public function calculatePageScore() {
-		$response = [];
 
 		$blocked_expressions = self::getSetting( "blocked_expressions" );
 		if ( !empty( $blocked_expressions) ) {
 			foreach ( $blocked_expressions as $blocked_expression ) {
 				$offset = 0;
-				while ( ( $offset = strpos( strip_tags( self::getText() ), trim( $blocked_expression ), $offset ) ) !== false ) {
+				while ( ( $offset = strpos( strip_tags( self::getText() ), $blocked_expression, $offset ) ) !== false ) {
 					$cut_off_start_offset = max( 0, $offset - 30 );
 					if ( strpos( strip_tags( self::getText() ), " ", $cut_off_start_offset ) !== false ) {
 						$cut_off_start_offset = strpos( strip_tags( self::getText() ), " ", $cut_off_start_offset );
 					}
 
-					$response[ 'blocked_expressions' ][] = [
+					$this->response[ 'blocked_expressions' ][] = [
 						"score" => self::getCheckList()[ 'blocked_expressions' ][ 'severity' ],
 						"example" => str_replace(
 							$blocked_expression,
@@ -68,42 +68,55 @@ class PageQualityScorerReadability extends PageQualityScorer{
 			}
 		}
 
-
-		$pNodes = self::getDOM()->getElementsByTagName('p');
+		$dom = new DOMDocument('1.0', 'utf-8');
+		$dom->loadHTML( '<?xml encoding="utf-8" ?>' . strip_tags( self::$text, ['p', 'table', 'tr', 'th', 'td', 'div', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5'] ) );
+		$pNodes = $dom->getElementsByTagName('div');
 		foreach ( $pNodes as $pNode ) {
-			$wc = self::str_word_count_utf8( $pNode->nodeValue );
+			$this->recurseDomNodes( $pNode );
+		}
+		return $this->response;
+	}
 
-			$score = "green";
-			if ( $wc > self::getSetting( "para_length_max" ) ) {
-				$response['para_length_max'][] = [
-					"score" => self::getCheckList()['para_length_max']['severity'],
-					"example" => mb_substr( $pNode->nodeValue, 0, 50)
-				];
-			} else if ( $wc > self::getSetting( "para_length" ) ) {
-				$response['para_length'][] = [
-					"score" => self::getCheckList()['para_length']['severity'],
-					"example" => mb_substr( $pNode->nodeValue, 0, 50)
-				];
-			}
+	public function recurseDomNodes( $pNode ) {
+		if ( $pNode->hasChildNodes() ) {
+            foreach ($pNode->childNodes as $childNode) {
+				$this->recurseDomNodes( $childNode );
+            }
+		} else {
+			$this->evaluateParagraphs( $pNode->nodeValue );
+		}
+	}
 
-			$sentences = preg_split('/(?<=[.?!])\s+(?=[a-z])/i', $pNode->nodeValue);
-			foreach( $sentences as $sentence ) {
-				$wc = self::str_word_count_utf8( $sentence );
-
-				if ( $wc > self::getSetting( "sentence_length_max" ) ) {
-					$response['sentence_length_max'][] = [
-						"score" => self::getCheckList()['sentence_length_max']['severity'],
-						"example" => mb_substr( $sentence, 0, 50)
-					];
-				} else if ( $wc > self::getSetting( "sentence_length" ) ) {
-					$response['sentence_length'][] = [
-						"score" => self::getCheckList()['sentence_length']['severity'],
-						"example" => mb_substr( $sentence, 0, 50)
-					];
-				}
-			}
+	public function evaluateParagraphs( $str ) {
+		$wc = self::str_word_count_utf8( $str );
+		$score = "green";
+		if ( $wc > self::getSetting( "para_length_max" ) ) {
+			$this->response['para_length_max'][] = [
+				"score" => self::getCheckList()['para_length_max']['severity'],
+				"example" => mb_substr( $str, 0, 50)
+			];
+		} else if ( $wc > self::getSetting( "para_length" ) ) {
+			$this->response['para_length'][] = [
+				"score" => self::getCheckList()['para_length']['severity'],
+				"example" => mb_substr( $str, 0, 50)
+			];
 		}
 
-		return $response;
+		$sentences = preg_split('/(?<=[.?!])\s+(?=[a-z])/i', $str);
+		foreach( $sentences as $sentence ) {
+			$wc = self::str_word_count_utf8( $sentence );
+
+			if ( $wc > self::getSetting( "sentence_length_max" ) ) {
+				$this->response['sentence_length_max'][] = [
+					"score" => self::getCheckList()['sentence_length_max']['severity'],
+					"example" => mb_substr( $sentence, 0, 50)
+				];
+			} else if ( $wc > self::getSetting( "sentence_length" ) ) {
+				$this->response['sentence_length'][] = [
+					"score" => self::getCheckList()['sentence_length']['severity'],
+					"example" => mb_substr( $sentence, 0, 50)
+				];
+			}
+		}
 	}
 }
