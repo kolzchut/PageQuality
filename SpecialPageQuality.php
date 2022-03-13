@@ -731,7 +731,7 @@ class SpecialPageQuality extends SpecialPage {
 					if ( !empty( $response[ 'example' ] ) ) {
 						$html .= '
 								 <li class="list-group-item">
-								    ' . $response[ 'example' ] . '...
+								    ' . $response[ 'example' ] . '<span class="ellipsis">&hellip;</span>
 								  </li>
 						';
 					}
