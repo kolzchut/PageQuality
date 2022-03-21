@@ -88,20 +88,6 @@ class PageQualityScorerReadability extends PageQualityScorer{
 	}
 
 	public function evaluateParagraphs( $str ) {
-		$wc = self::str_word_count_utf8( $str );
-		$score = "green";
-		if ( $wc > self::getSetting( "para_length_max" ) ) {
-			$this->response['para_length_max'][] = [
-				"score" => self::getCheckList()['para_length_max']['severity'],
-				"example" => mb_substr( $str, 0, 50)
-			];
-		} else if ( $wc > self::getSetting( "para_length" ) ) {
-			$this->response['para_length'][] = [
-				"score" => self::getCheckList()['para_length']['severity'],
-				"example" => mb_substr( $str, 0, 50)
-			];
-		}
-
 		$sentences = preg_split('/(?<=[.?!])\s+(?=[a-z])/i', $str);
 		foreach( $sentences as $sentence ) {
 			$wc = self::str_word_count_utf8( $sentence );
@@ -118,5 +104,24 @@ class PageQualityScorerReadability extends PageQualityScorer{
 				];
 			}
 		}
+
+		if ( count( $sentences ) == 1 ) {
+			return;
+		}
+
+		$wc = self::str_word_count_utf8( $str );
+		$score = "green";
+		if ( $wc > self::getSetting( "para_length_max" ) ) {
+			$this->response['para_length_max'][] = [
+				"score" => self::getCheckList()['para_length_max']['severity'],
+				"example" => mb_substr( $str, 0, 50)
+			];
+		} else if ( $wc > self::getSetting( "para_length" ) ) {
+			$this->response['para_length'][] = [
+				"score" => self::getCheckList()['para_length']['severity'],
+				"example" => mb_substr( $str, 0, 50)
+			];
+		}
+
 	}
 }
