@@ -251,7 +251,24 @@ class SpecialPageQuality extends SpecialPage {
 
 	}
 
+	function showListReportNew( $report_type ) {
+		$from_date = $this->getRequest()->getVal( 'from_date', 0 );
+		$to_date = $this->getRequest()->getVal( 'to_date', 0 );
+		$addl_conds = [];
+		if ( !empty( $from_date ) ) {
+			$addl_conds[] = "timestamp > $from_date";
+		}
+		if ( !empty( $to_date ) ) {
+			$addl_conds[] = "timestamp < $to_date";
+		}
+		$pager = new PageQualityReportPager( $this->getContext(), $this->getLinkRenderer(), $report_type, $addl_conds );
+
+		$this->getOutput()->addParserOutputContent( $pager->getFullOutput() );	}
+
 	function showListReport( $report_type ) {
+		$this->showListReportNew( $report_type );
+		return;
+
 		PageQualityScorer::loadAllScoreres();
 		$all_checklist = PageQualityScorer::getAllChecksList();
 
@@ -478,10 +495,10 @@ class SpecialPageQuality extends SpecialPage {
 		foreach( $res as $row ) {
 			if ( $row->new_score > PageQualityScorer::getSetting( "red" ) && $row->old_score < PageQualityScorer::getSetting( "red" ) ) {
 				$declines[$row->page_id] = 1;
-				$improvements[$row->page_id] = 0;
+//				$improvements[$row->page_id] = 0;
 			} else if ( $row->new_score < PageQualityScorer::getSetting( "red" ) && $row->old_score > PageQualityScorer::getSetting( "red" ) ) {
 				$improvements[$row->page_id] = 1;
-				$declines[$row->page_id] = 0;
+//				$declines[$row->page_id] = 0;
 			}
 		}
 		$html = '
@@ -729,11 +746,10 @@ class SpecialPageQuality extends SpecialPage {
 				';
 				foreach( $score_responses as $response ) {
 					if ( !empty( $response[ 'example' ] ) ) {
-						$html .= '
-								 <li class="list-group-item">
-								    ' . $response[ 'example' ] . '<span class="ellipsis">&hellip;</span>
-								  </li>
-						';
+						$html .= 
+								 '<li class="list-group-item">' .
+						            trim( $response[ 'example' ] )  . '<span class="ellipsis">&hellip;</span>' .
+								  '</li>';
 					}
 				}
 				$html .= '
