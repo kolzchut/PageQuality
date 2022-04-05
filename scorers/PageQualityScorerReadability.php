@@ -78,12 +78,18 @@ class PageQualityScorerReadability extends PageQualityScorer{
 	}
 
 	public function recurseDomNodes( $pNode ) {
-		if ( $pNode->hasChildNodes() ) {
+		if ( $pNode->hasChildNodes() && count( $pNode->childNodes ) > 1 ) {
             foreach ($pNode->childNodes as $childNode) {
 				$this->recurseDomNodes( $childNode );
             }
 		} else {
-			$this->evaluateParagraphs( $pNode->nodeValue );
+			if ( $pNode->hasChildNodes() ) {
+				if ( stripos($pNode->getAttribute('class'), "emphasis-item-text") === false ) {
+					$this->evaluateParagraphs( $pNode->firstChild->nodeValue );
+				}
+			} else {
+				$this->evaluateParagraphs( $pNode->nodeValue );
+			}
 		}
 	}
 
