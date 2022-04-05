@@ -147,6 +147,9 @@ class PageQualityReportPager extends TablePager {
 			$info = array_merge_recursive( $info, ArticleContentArea::getJoin( $this->opts->getValue( 'article_content_type' ), "pq_score.page_id" ) );
 		}
 		switch ( $this->report_type ) {
+			case "all":
+				$info['conds'][] = "score > 1";
+				break;
 			case "red_all":
 				$info['conds'][] = "score > " . PageQualityScorer::getSetting( "red" );
 				break;

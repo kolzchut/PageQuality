@@ -252,7 +252,7 @@ class SpecialPageQuality extends SpecialPage {
 
 	}
 
-	function showListReportNew( $report_type ) {
+	function showListReport( $report_type ) {
 		$valid_content_areas = [];
 		if ( \ExtensionRegistry::getInstance()->isLoaded ( 'ArticleContentArea' ) ) {
 			$valid_content_areas = ArticleContentArea::getValidContentAreas();
@@ -289,172 +289,7 @@ class SpecialPageQuality extends SpecialPage {
 
 		$pager = new PageQualityReportPager( $this->getContext(), $this->getLinkRenderer(), $opts, $report_type, $addl_conds );
 
-		$this->getOutput()->addParserOutputContent( $pager->getFullOutput() );	}
-
-	function showListReport( $report_type ) {
-		$this->showListReportNew( $report_type );
-		return;
-
-		PageQualityScorer::loadAllScoreres();
-		$all_checklist = PageQualityScorer::getAllChecksList();
-
-		$from_date = $this->getRequest()->getVal( 'from_date', 0 );
-		$to_date = $this->getRequest()->getVal( 'to_date', 0 );
-
-		$dbr = wfGetDB( DB_REPLICA );
-		$res = $dbr->select(
-			"pq_issues",
-			'*',
-			[true],
-			__METHOD__
-		);
-		$page_stats = [];
-		foreach( $res as $row ) {
-			$type = $row->pq_type;
-			$score = $row->score;
-			$page_id = $row->page_id;
-			if ( !array_key_exists( $page_id, $page_stats ) ) {
-				$page_stats[$page_id] = [ 'score' => 0 ];
-			}
-			$page_stats[$page_id]['score'] += $score;
-			if ( !array_key_exists( $type, $page_stats[$page_id] ) ) {
-				$page_stats[$page_id][$type] = 0;
-			}
-			$page_stats[$page_id][$type]++;
-			$log_row = $dbr->selectRow(
-				"pq_score_log",
-				'*',
-				[ "page_id" => $page_id ],
-				__METHOD__,
-				array( 'ORDER BY' => 'timestamp DESC', 'LIMIT' => 1 ),
-			);
-			$page_stats[$page_id]['old_score'] = $log_row->old_score;
-		}
-
-		$result = [];
-		if ( $report_type == "red_all" ) {
-			$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_reports_of_type', $this->msg( 'red_scanned_pages' )->escaped() ) );
-			foreach( $page_stats as $page_id => $page_data ) {
-				if ( $page_data['score'] > PageQualityScorer::getSetting( "red" ) ) {
-					$result[$page_id] = 1;
-				}
-			}
-		} else if ( $report_type == "yellow_all" ) {
-			$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_reports_of_type', $this->msg( 'yellow_scanned_pages' )->escaped() ) );
-			foreach( $page_stats as $page_id => $page_data ) {
-				if ( $page_data['score'] > 0 && $page_data['score'] <= PageQualityScorer::getSetting( "red" ) ) {
-					$result[$page_id] = 1;
-				}
-			}
-		} else if ( $report_type == "declines" ) {
-			$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_reports_of_type', $this->msg( 'declining_pages' )->escaped() ) );
-			foreach( $page_stats as $page_id => $page_data ) {
-
-				$log_rows = $dbr->select(
-					"pq_score_log",
-					'*',
-					[ "page_id" => $page_id, "timestamp > $from_date AND timestamp < $to_date" ],
-					__METHOD__
-				);
-				foreach( $log_rows as $log_row ) {
-					if ( $log_row->new_score > PageQualityScorer::getSetting( "red" ) && $log_row->old_score < PageQualityScorer::getSetting( "red" ) ) {
-						$result[$page_id] = 1;
-					}
-				}
-			}
-		} else if ( $report_type == "improvements" ) {
-			$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_reports_of_type', $this->msg( 'improving_pages' )->escaped() ) );
-			foreach( $page_stats as $page_id => $page_data ) {
-				$log_rows = $dbr->select(
-					"pq_score_log",
-					'*',
-					[ "page_id" => $page_id, "timestamp > $from_date AND timestamp < $to_date" ],
-					__METHOD__
-				);
-				foreach( $log_rows as $log_row ) {
-					if ( $log_row->new_score < PageQualityScorer::getSetting( "red" ) && $log_row->old_score > PageQualityScorer::getSetting( "red" ) ) {
-						$result[$page_id] = 1;
-					}
-				}
-			}
-		} else {
-			$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_reports_of_type', $this->msg( $all_checklist[$report_type]['name'] )->escaped() ) );
-			foreach( $page_stats as $page_id => $page_data ) {
-				if ( array_key_exists( $report_type, $page_data ) ) {
-					$result[$page_id] = 1;
-				}
-			}
-		}
-
-
-		$html = '
-			<table class="wikitable sortable">
-			<tr>
-				<th>
-					' . $this->msg('pq_report_pagename' )->escaped() . '
-				</th>
-				<th>
-					' . $this->msg('pq_report_page_score' )->escaped() . '
-				</th>
-				<th>
-					' . $this->msg('pq_report_page_score_old' )->escaped() . '
-				</th>
-				<th>
-					' . $this->msg('pq_report_page_status' )->escaped() . '
-				</th>
-			';
-		$col = array_column( $all_checklist, "severity" );
-		array_multisort( $col, SORT_DESC, $all_checklist );
-		foreach( $all_checklist as $type => $type_data ) {
-			$html .= '
-				<th>
-					' . $this->msg( $type_data['name'] )->escaped() .'
-				</th>
-			';
-		}
-		$html .= '
-			</tr>';
-
-		foreach( $page_stats as $page_id => $page_data ) {
-			if ( !array_key_exists( $page_id, $result ) ) {
-				continue;
-			}
-
-			// Messages used next: pq_report_page_status_red, pq_report_page_status_yellow, pq_report_page_status_green
-			$page_status_code = $page_data['score'] > PageQualityScorer::getSetting( "red" ) ? "red" : ( $page_data['score'] > 0 ? "yellow" : "green" );
-
-			$html .= '
-				<tr>
-					<td>
-						' . $this->getLinkRenderer()->makeKnownLink( Title::newFromId( $page_id ) ) . '
-					</td>
-					<td>
-						' . $page_data['score'] . '
-					</td>
-					<td>
-						' . $page_data['old_score'] . '
-					</td>
-					<td>
-						' . $this->msg( 'pq_report_page_status_' . $page_status_code )->escaped() . '
-					</td>
-				';
-			foreach( $all_checklist as $type => $type_data ) {
-				$counter = 0;
-				if ( array_key_exists( $type, $page_data ) ) {
-					$counter = $page_data[$type];
-				}
-				$html .= '
-					<td>
-						'. $counter .'
-					</td>
-				';
-			}
-			$html .= '
-				</tr>';
-
-		}
-		$html .= '</table>';
-		$this->getOutput()->addHTML( $html );
+		$this->getOutput()->addParserOutputContent( $pager->getFullOutput() );	
 	}
 
 	function showChangeHistoryForm() {
@@ -608,6 +443,9 @@ class SpecialPageQuality extends SpecialPage {
 		$red_page_count = count( array_filter( array_column($page_stats, "score"), function( $a ) { return $a > PageQualityScorer::getSetting( "red" ); } ) );
 		$yellow_page_count = count( array_filter( array_column($page_stats, "score"), function( $a ) { return $a <= PageQualityScorer::getSetting( "red" ) && $a >0; } ) );
 
+		$page = 'Special:PageQuality/reports/all';
+		$title = Title::newFromText( $page );
+		$link = $this->getLinkRenderer()->makeLink( $title, count( $page_stats ) );
 
 		$html = '
 			<table class="wikitable sortable">
@@ -626,7 +464,7 @@ class SpecialPageQuality extends SpecialPage {
 					' . $this->msg( 'total_scanned_pages' )->escaped() . '
 				</td>
 				<td>
-					' . count( $page_stats ) .'
+					' . $link .'
 				</td>
 			</tr>';
 
