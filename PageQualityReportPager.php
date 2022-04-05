@@ -2,16 +2,20 @@
 
 use MediaWiki\Linker\LinkRenderer;
 use MediaWiki\MediaWikiServices;
+use MediaWiki\Extension\ArticleContentArea\ArticleContentArea;
 
 class PageQualityReportPager extends TablePager {
+
 	/** @var LinkRenderer */
 	private $linkRenderer;
 	private $report_type;
 	private $addl_conds;
+	private $opts;
 
-	public function __construct( IContextSource $context, LinkRenderer $linkRenderer, $report_type, $addl_conds ) {
+	public function __construct( IContextSource $context, LinkRenderer $linkRenderer, FormOptions $opts, $report_type, $addl_conds ) {
 		parent::__construct( $context );
 
+		$this->opts = $opts;
 		$this->addl_conds = $addl_conds;
 		$this->report_type = $report_type;
 		$this->linkRenderer = $linkRenderer;
@@ -47,6 +51,8 @@ class PageQualityReportPager extends TablePager {
 	}
 
 	public function formatValueMy( $name, $value, $page_stats ) {
+		$formatted = "";
+
 		$row = $this->mCurrentRow;
 
 		if ( array_key_exists( $name, $page_stats ) ) {
@@ -79,7 +85,6 @@ class PageQualityReportPager extends TablePager {
 				$formatted = $this->msg( 'pq_report_page_status_' . $status )->escaped();
 				break;
 			default:
-				$formatted = "";
 				break;
 		}
 
@@ -135,9 +140,12 @@ class PageQualityReportPager extends TablePager {
 			'tables' => [ 'pq_score', 'pq_score_log' ],
 			'fields' => [ 'pq_score.page_id', 'pq_score.score', 'old_score', 'timestamp', 'MAX(timestamp)'],
 			'conds' => [],
-			'joins_conds' => [ "pq_score_log" => ["LEFT JOIN", ["pq_score.page_id=pq_score_log.page_id AND pq_score.score=pq_score_log.new_score"] ] ],
+			'join_conds' => [ "pq_score_log" => ["LEFT JOIN", ["pq_score.page_id = pq_score_log.page_id AND pq_score.score = pq_score_log.new_score"] ] ],
 			'options' => ["GROUP BY" => "pq_score.page_id"]
 		];
+		if ( \ExtensionRegistry::getInstance()->isLoaded ( 'ArticleContentArea' ) ) {
+			$info = array_merge_recursive( $info, ArticleContentArea::getJoin( $this->opts->getValue( 'article_content_type' ), "pq_score.page_id" ) );
+		}
 		switch ( $this->report_type ) {
 			case "red_all":
 				$info['conds'][] = "score > " . PageQualityScorer::getSetting( "red" );
@@ -159,7 +167,7 @@ class PageQualityReportPager extends TablePager {
 			default:
 				$info['tables'][] = 'pq_issues';
 				$info['conds']['pq_type'] = $this->report_type;
-				$info['joins_conds']["pq_issues"] = ["LEFT JOIN", ["pq_score.page_id=pq_issues.page_id"] ];
+				$info['join_conds']["pq_issues"] = ["LEFT JOIN", ["pq_score.page_id=pq_issues.page_id"] ];
 		}
 		if ( !empty( $this->addl_conds ) ) {
 			$info['conds'] = array_merge( $info['conds'], $this->addl_conds );

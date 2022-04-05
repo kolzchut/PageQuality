@@ -63,5 +63,7 @@
 	"pag_scorer_article_type": "Article Types to run Page Scorer Checks",
 	"pg_history_form_from_date": "From Date",
 	"pg_history_form_to_date": "To Date",
-	"pg_history_form_submit": "Filter"
+	"pg_history_form_submit": "Filter",
+	"article_content_type": "Article Content Type",
+	"filter-legend": "Filters"
 }

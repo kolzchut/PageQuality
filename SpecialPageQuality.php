@@ -1,4 +1,5 @@
 <?php
+use MediaWiki\Extension\ArticleContentArea\ArticleContentArea;
 
 class SpecialPageQuality extends SpecialPage {
 
@@ -252,6 +253,26 @@ class SpecialPageQuality extends SpecialPage {
 	}
 
 	function showListReportNew( $report_type ) {
+		$valid_content_areas = [];
+		if ( \ExtensionRegistry::getInstance()->isLoaded ( 'ArticleContentArea' ) ) {
+			$valid_content_areas = ArticleContentArea::getValidContentAreas();
+		}
+		$formDescriptor = [
+			'article_content_type' => [
+				'type' => 'select',
+				'name' => 'article_content_type',
+				'label-message' => 'article_content_type',
+				'options' => array_combine($valid_content_areas, $valid_content_areas),
+			],
+		];
+		$htmlForm = HTMLForm::factory( 'ooui', $formDescriptor, $this->getContext() );
+		$htmlForm
+			->setMethod( 'get' )
+			->setWrapperLegendMsg( 'filter-legend' )
+			->setSubmitTextMsg( 'pg_history_form_submit' )
+			->prepareForm()
+			->displayForm( false );
+
 		$from_date = $this->getRequest()->getVal( 'from_date', 0 );
 		$to_date = $this->getRequest()->getVal( 'to_date', 0 );
 		$addl_conds = [];
@@ -261,7 +282,12 @@ class SpecialPageQuality extends SpecialPage {
 		if ( !empty( $to_date ) ) {
 			$addl_conds[] = "timestamp < $to_date";
 		}
-		$pager = new PageQualityReportPager( $this->getContext(), $this->getLinkRenderer(), $report_type, $addl_conds );
+
+		$opts = ( new FormOptions() );
+		$opts->add( 'article_content_type', '' );
+		$opts->fetchValuesFromRequest( $this->getRequest() );
+
+		$pager = new PageQualityReportPager( $this->getContext(), $this->getLinkRenderer(), $opts, $report_type, $addl_conds );
 
 		$this->getOutput()->addParserOutputContent( $pager->getFullOutput() );	}
 
