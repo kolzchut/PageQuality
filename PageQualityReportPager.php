@@ -3,6 +3,7 @@
 use MediaWiki\Linker\LinkRenderer;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Extension\ArticleContentArea\ArticleContentArea;
+use MediaWiki\Extension\ArticleType\ArticleType;
 
 class PageQualityReportPager extends TablePager {
 
@@ -143,8 +144,11 @@ class PageQualityReportPager extends TablePager {
 			'join_conds' => [ "pq_score_log" => ["LEFT JOIN", ["pq_score.page_id = pq_score_log.page_id AND pq_score.score = pq_score_log.new_score"] ] ],
 			'options' => ["GROUP BY" => "pq_score.page_id"]
 		];
-		if ( \ExtensionRegistry::getInstance()->isLoaded ( 'ArticleContentArea' ) ) {
+		if ( \ExtensionRegistry::getInstance()->isLoaded ( 'ArticleContentArea' ) && !empty( $this->opts->getValue( 'article_content_type' ) ) ) {
 			$info = array_merge_recursive( $info, ArticleContentArea::getJoin( $this->opts->getValue( 'article_content_type' ), "pq_score.page_id" ) );
+		}
+		if ( \ExtensionRegistry::getInstance()->isLoaded ( 'ArticleType' ) && !empty( $this->opts->getValue( 'article_type' ) ) ) {
+			$info = array_merge_recursive( $info, ArticleType::getJoin( $this->opts->getValue( 'article_type' ), "pq_score.page_id" ) );
 		}
 		switch ( $this->report_type ) {
 			case "all":

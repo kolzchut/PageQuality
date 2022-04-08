@@ -1,5 +1,6 @@
 <?php
 use MediaWiki\Extension\ArticleContentArea\ArticleContentArea;
+use MediaWiki\Extension\ArticleType\ArticleType;
 
 class SpecialPageQuality extends SpecialPage {
 
@@ -253,18 +254,25 @@ class SpecialPageQuality extends SpecialPage {
 	}
 
 	function showListReport( $report_type ) {
-		$valid_content_areas = [];
+		$formDescriptor = [];
 		if ( \ExtensionRegistry::getInstance()->isLoaded ( 'ArticleContentArea' ) ) {
 			$valid_content_areas = ArticleContentArea::getValidContentAreas();
-		}
-		$formDescriptor = [
-			'article_content_type' => [
+			$formDescriptor['article_content_type'] = [
 				'type' => 'select',
 				'name' => 'article_content_type',
 				'label-message' => 'article_content_type',
-				'options' => array_combine($valid_content_areas, $valid_content_areas),
-			],
-		];
+				'options' => [ "" => "" ] + array_combine($valid_content_areas, $valid_content_areas),
+			];
+		}
+		if ( \ExtensionRegistry::getInstance()->isLoaded ( 'ArticleType' ) ) {
+			$valid_article_types = ArticleType::getValidArticleTypes();
+			$formDescriptor['article_article_type'] = [
+				'type' => 'select',
+				'name' => 'article_type',
+				'label-message' => 'article_type',
+				'options' => [ "" => "" ] + array_combine($valid_article_types, $valid_article_types),
+			];
+		}
 		$htmlForm = HTMLForm::factory( 'ooui', $formDescriptor, $this->getContext() );
 		$htmlForm
 			->setMethod( 'get' )
@@ -285,6 +293,7 @@ class SpecialPageQuality extends SpecialPage {
 
 		$opts = ( new FormOptions() );
 		$opts->add( 'article_content_type', '' );
+		$opts->add( 'article_type', '' );
 		$opts->fetchValuesFromRequest( $this->getRequest() );
 
 		$pager = new PageQualityReportPager( $this->getContext(), $this->getLinkRenderer(), $opts, $report_type, $addl_conds );

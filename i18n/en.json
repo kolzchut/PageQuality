@@ -72,5 +72,6 @@
 	"pg_history_form_to_date": "To Date",
 	"pg_history_form_submit": "Filter",
 	"article_content_type": "Article Content Type",
+	"article_type": "Article Type",
 	"filter-legend": "Filters"
 }
