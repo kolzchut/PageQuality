@@ -610,9 +610,9 @@ class SpecialPageQuality extends SpecialPage {
 				';
 				foreach( $score_responses as $response ) {
 					if ( !empty( $response[ 'example' ] ) ) {
-						$html .= '
-								 <li class="list-group-item">' .
-						            trim( $response[ 'example' ] ) . '...' .
+						$html .= 
+								 '<li class="list-group-item">' .
+						            trim( $response[ 'example' ] )  . '<span class="ellipsis">&hellip;</span>' .
 								  '</li>';
 					}
 				}

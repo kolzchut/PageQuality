@@ -21,6 +21,10 @@
 	font-weight: bold;
 }
 
+#pagequality-sidebar .ellipsis {
+	user-select: none;
+}
+
 #pagequality-sidebar .panel-body {
 	padding: 0; /* Padding on padding on padding... */
 }
