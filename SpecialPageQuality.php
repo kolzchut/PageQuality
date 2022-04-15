@@ -445,9 +445,12 @@ class SpecialPageQuality extends SpecialPage {
 			$page_stats[$page_id][$type]++;
 
 			if ( !array_key_exists( $type, $scorer_stats ) ) {
-				$scorer_stats[$type] = 0;
+				$scorer_stats[$type] = [];
 			}
-			$scorer_stats[$type]++;
+			if ( !array_key_exists( $page_id, $scorer_stats[$type] ) ) {
+				$scorer_stats[$type][$page_id] = 0;
+			}
+			$scorer_stats[$type][$page_id]++;
 		}
 		$red_page_count = count( array_filter( array_column($page_stats, "score"), function( $a ) { return $a > PageQualityScorer::getSetting( "red" ); } ) );
 		$yellow_page_count = count( array_filter( array_column($page_stats, "score"), function( $a ) { return $a <= PageQualityScorer::getSetting( "red" ) && $a >0; } ) );
@@ -525,7 +528,7 @@ class SpecialPageQuality extends SpecialPage {
 			if ( array_key_exists( $type, $scorer_stats ) ) {
 				$page = "Special:PageQuality/reports/$type";
 				$title = Title::newFromText( $page );
-				$link = $this->getLinkRenderer()->makeLink( $title, $scorer_stats[$type] );
+				$link = $this->getLinkRenderer()->makeLink( $title, count( $scorer_stats[$type] ) );
 
 				$html .= '
 					<tr>
