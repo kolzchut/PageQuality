@@ -273,6 +273,22 @@ class SpecialPageQuality extends SpecialPage {
 				'options' => [ "" => "" ] + array_combine($valid_article_types, $valid_article_types),
 			];
 		}
+
+		if ( $report_type == "all" ) {
+			$this->getOutput()->setPageTitle( $this->msg( "total_scanned_pages" )->escaped() );
+		} else if ( $report_type == "red_all" ) {
+			$this->getOutput()->setPageTitle( $this->msg( "red_scanned_pages" )->escaped() );
+		} else if ( $report_type == "yellow_all" ) {
+			$this->getOutput()->setPageTitle( $this->msg( "yellow_scanned_pages" )->escaped() );
+		} else if ( $report_type == "declines" ) {
+			$this->getOutput()->setPageTitle( $this->msg( "declining_pages" )->escaped() );
+		} else if ( $report_type == "improvements" ) {
+			$this->getOutput()->setPageTitle( $this->msg( "improving_pages" )->escaped() );
+		} else {
+			$all_checklist = PageQualityScorer::getAllChecksList();
+			$this->getOutput()->setPageTitle( $this->msg( "scorer_type_count", $this->msg( $all_checklist[$report_type] ) )->escaped() );
+		}
+
 		$htmlForm = HTMLForm::factory( 'ooui', $formDescriptor, $this->getContext() );
 		$htmlForm
 			->setMethod( 'get' )
@@ -284,11 +300,16 @@ class SpecialPageQuality extends SpecialPage {
 		$from_date = $this->getRequest()->getVal( 'from_date', 0 );
 		$to_date = $this->getRequest()->getVal( 'to_date', 0 );
 		$addl_conds = [];
-		if ( !empty( $from_date ) ) {
+		if ( !empty( $from_date ) && !empty( $to_date ) ) {
 			$addl_conds[] = "timestamp > $from_date";
-		}
-		if ( !empty( $to_date ) ) {
 			$addl_conds[] = "timestamp < $to_date";
+			$this->getOutput()->addHTML( (new DateTime())->setTimestamp($from_date)->format("d M y") . " - " . (new DateTime())->setTimestamp($to_date)->format("d M y") );
+		} else if ( !empty( $from_date ) ) {
+			$addl_conds[] = "timestamp > $from_date";
+			$this->getOutput()->addHTML( " > " . (new DateTime())->setTimestamp($from_date)->format("d M y") );
+		} else if ( !empty( $to_date ) ) {
+			$addl_conds[] = "timestamp < $to_date";
+			$this->getOutput()->addHTML( " < " . (new DateTime())->setTimestamp($to_date)->format("d M y") );
 		}
 
 		$opts = ( new FormOptions() );
