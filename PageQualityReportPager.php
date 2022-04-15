@@ -30,10 +30,9 @@ class PageQualityReportPager extends TablePager {
 
 		$headers = [
 			'pagename' => 'pq_report_pagename',
-			'page_score' => 'pq_report_page_score',
+			'score' => 'pq_report_page_score',
 			// 'score_old' => 'pq_report_page_score_old',
-			'page_status' => 'pq_report_page_status',
-			'page_status' => 'pq_report_page_status',
+			'status' => 'pq_report_page_status',
 			"old_score" => "pq_report_page_score_old"
 		];
 		$headers["timestamp"] = "pq_report_page_score_timestamp";
@@ -68,7 +67,7 @@ class PageQualityReportPager extends TablePager {
 					$formatted = (new DateTime())->setTimestamp( $row->timestamp )->format( 'j M y' );
 				}
 				break;
-			case 'page_score':
+			case 'score':
 				if ( !empty( $row->new_score ) ) {
 					$formatted = $row->new_score;
 				} else {
@@ -81,7 +80,7 @@ class PageQualityReportPager extends TablePager {
 			// case 'score_old':
 			// 	$formatted = $row->score_old;
 			// 	break;
-			case 'page_status':
+			case 'status':
 				$status = $row->score > PageQualityScorer::getSetting( "red" ) ? "red" : ( $row->score > 0 ? "yellow" : "green" );
 				$formatted = $this->msg( 'pq_report_page_status_' . $status )->escaped();
 				break;
@@ -187,6 +186,10 @@ class PageQualityReportPager extends TablePager {
 	}
 
 	public function isFieldSortable( $name ) {
-		return true;
+		$sortable = false;
+		if ( in_array( $name, [ 'score', 'old_score', 'timestamp' ] ) ) {
+			$sortable = true;
+		}
+		return $sortable;
 	}
 }
