@@ -57,10 +57,11 @@ class PageQualityScorerReadability extends PageQualityScorer{
 
 					$this->response[ 'blocked_expressions' ][] = [
 						"score" => self::getCheckList()[ 'blocked_expressions' ][ 'severity' ],
-						"example" => str_replace(
-							$blocked_expression,
+						"example" => substr_replace(
+							substr( strip_tags( self::getText() ), $cut_off_start_offset, $cut_off_start_offset + strlen( $blocked_expression ) + 30 ),
 							"<b>" . $blocked_expression . "</b>",
-							substr( strip_tags( self::getText() ), $cut_off_start_offset, $cut_off_start_offset + strlen( $blocked_expression ) + 30	)
+							$offset - $cut_off_start_offset,
+							strlen( $blocked_expression )
 						)
 					];
 					$offset += strlen( $blocked_expression );
