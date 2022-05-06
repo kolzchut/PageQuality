@@ -10,14 +10,12 @@ class PageQualityReportPager extends TablePager {
 	/** @var LinkRenderer */
 	private $linkRenderer;
 	private $report_type;
-	private $addl_conds;
 	private $opts;
 
-	public function __construct( IContextSource $context, LinkRenderer $linkRenderer, FormOptions $opts, $report_type, $addl_conds ) {
+	public function __construct( IContextSource $context, LinkRenderer $linkRenderer, FormOptions $opts, $report_type ) {
 		parent::__construct( $context );
 
 		$this->opts = $opts;
-		$this->addl_conds = $addl_conds;
 		$this->report_type = $report_type;
 		$this->linkRenderer = $linkRenderer;
 	}
@@ -175,8 +173,11 @@ class PageQualityReportPager extends TablePager {
 				$info['conds']['pq_type'] = $this->report_type;
 				$info['join_conds']["pq_issues"] = ["LEFT JOIN", ["pq_score.page_id=pq_issues.page_id"] ];
 		}
-		if ( !empty( $this->addl_conds ) ) {
-			$info['conds'] = array_merge( $info['conds'], $this->addl_conds );
+		if ( !empty( $this->opts->getValue( 'from_date' ) ) ) {
+			$info['conds'][] = "timestamp > " . DateTime::createFromFormat( 'Y-m-d', $this->opts->getValue('from_date') )->getTimestamp();
+		}
+		if ( !empty( $this->opts->getValue( 'to_date' ) ) ) {
+			$info['conds'][] = "timestamp < " . DateTime::createFromFormat( 'Y-m-d', $this->opts->getValue('to_date') )->getTimestamp();
 		}
 		return $info;
 	}

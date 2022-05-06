@@ -254,6 +254,10 @@ class SpecialPageQuality extends SpecialPage {
 	}
 
 	function showListReport( $report_type ) {
+		$from_date = $this->getRequest()->getVal( 'from_date', "" );
+		$to_date = $this->getRequest()->getVal( 'to_date', "" );
+
+
 		$formDescriptor = [];
 		if ( \ExtensionRegistry::getInstance()->isLoaded ( 'ArticleContentArea' ) ) {
 			$valid_content_areas = ArticleContentArea::getValidContentAreas();
@@ -274,6 +278,18 @@ class SpecialPageQuality extends SpecialPage {
 			];
 		}
 
+		$formDescriptor['from_date'] = [
+			'type' => 'date',
+			'name' => 'from_date',
+			'label' => $this->msg( 'pg_history_form_from_date' ),
+			'default' => $from_date,
+		];
+		$formDescriptor['to_date'] = [
+			'type' => 'date',
+			'name' => 'to_date',
+			'label' => $this->msg( 'pg_history_form_to_date' ),
+			'default' => $to_date,
+		];
 		if ( $report_type == "all" ) {
 			$this->getOutput()->setPageTitle( $this->msg( "total_scanned_pages" )->escaped() );
 		} else if ( $report_type == "red_all" ) {
@@ -297,27 +313,21 @@ class SpecialPageQuality extends SpecialPage {
 			->prepareForm()
 			->displayForm( false );
 
-		$from_date = $this->getRequest()->getVal( 'from_date', 0 );
-		$to_date = $this->getRequest()->getVal( 'to_date', 0 );
-		$addl_conds = [];
-		if ( !empty( $from_date ) && !empty( $to_date ) ) {
-			$addl_conds[] = "timestamp > $from_date";
-			$addl_conds[] = "timestamp < $to_date";
-			$this->getOutput()->addHTML( (new DateTime())->setTimestamp($from_date)->format("d M y") . " - " . (new DateTime())->setTimestamp($to_date)->format("d M y") );
-		} else if ( !empty( $from_date ) ) {
-			$addl_conds[] = "timestamp > $from_date";
-			$this->getOutput()->addHTML( " > " . (new DateTime())->setTimestamp($from_date)->format("d M y") );
-		} else if ( !empty( $to_date ) ) {
-			$addl_conds[] = "timestamp < $to_date";
-			$this->getOutput()->addHTML( " < " . (new DateTime())->setTimestamp($to_date)->format("d M y") );
-		}
-
 		$opts = ( new FormOptions() );
 		$opts->add( 'article_content_type', '' );
 		$opts->add( 'article_type', '' );
+		$opts->add( 'from_date', '' );
+		$opts->add( 'to_date', '' );
 		$opts->fetchValuesFromRequest( $this->getRequest() );
 
-		$pager = new PageQualityReportPager( $this->getContext(), $this->getLinkRenderer(), $opts, $report_type, $addl_conds );
+		if ( !empty( $from_date ) ) {
+			$opts->setValue( 'from_date', $from_date, true );
+		}
+		if ( !empty( $to_date ) ) {
+			$opts->setValue( 'to_date', $to_date, true );
+		}
+
+		$pager = new PageQualityReportPager( $this->getContext(), $this->getLinkRenderer(), $opts, $report_type );
 
 		$this->getOutput()->addParserOutputContent( $pager->getFullOutput() );	
 	}
@@ -386,10 +396,10 @@ class SpecialPageQuality extends SpecialPage {
 		foreach( $res as $row ) {
 			if ( $row->new_score > PageQualityScorer::getSetting( "red" ) && $row->old_score < PageQualityScorer::getSetting( "red" ) ) {
 				$declines[$row->page_id] = 1;
-//				$improvements[$row->page_id] = 0;
+				$improvements[$row->page_id] = 0;
 			} else if ( $row->new_score < PageQualityScorer::getSetting( "red" ) && $row->old_score > PageQualityScorer::getSetting( "red" ) ) {
 				$improvements[$row->page_id] = 1;
-//				$declines[$row->page_id] = 0;
+				$declines[$row->page_id] = 0;
 			}
 		}
 		$html = '
@@ -404,7 +414,7 @@ class SpecialPageQuality extends SpecialPage {
 			';
 		$page = 'Special:PageQuality/reports/declines';
 		$title = Title::newFromText( $page );
-		$link = $this->getLinkRenderer()->makeLink( $title, array_sum( $declines ), [], [ 'from_date' => $from_date, 'to_date' => $to_date ] );
+		$link = $this->getLinkRenderer()->makeLink( $title, array_sum( $declines ), [], [ 'from_date' => $from, 'to_date' => $to ] );
 
 		$html .= '
 			<tr>
@@ -418,7 +428,7 @@ class SpecialPageQuality extends SpecialPage {
 
 		$page = 'Special:PageQuality/reports/improvements';
 		$title = Title::newFromText( $page );
-		$link = $this->getLinkRenderer()->makeLink( $title, array_sum( $improvements ), [], [ 'from_date' => $from_date, 'to_date' => $to_date ] );
+		$link = $this->getLinkRenderer()->makeLink( $title, array_sum( $improvements ), [], [ 'from_date' => $from, 'to_date' => $to ] );
 
 		$html .= '
 			<tr>
