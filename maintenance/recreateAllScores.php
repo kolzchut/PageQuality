@@ -120,6 +120,7 @@ class recreateAllScores extends Maintenance {
 	private function getBasicQuery() {
 		$dbr = $this->getDB( DB_REPLICA );
 
+		$query = [];
 		$query[ 'tables' ] = [ 'page' ];
 		$query[ 'fields' ]  = [ 'page_id', 'page_namespace', 'page_title' ];
 		$query[ 'options' ] = [

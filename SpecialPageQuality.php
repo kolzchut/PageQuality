@@ -143,19 +143,18 @@ class SpecialPageQuality extends SpecialPage {
 				}
 			}
 			if ( $this->getRequest()->getVal('regenerate_scores') == "yes" ) {
-				$res = $dbr->select(
-					"pq_issues",
+				$dbw->delete( 'pq_issues', '*' );
+
+				$res = $dbr->select( 
+					['page'],
+					['page_id'],
 					'*',
-					[true],
-					__METHOD__
+					__METHOD__,
 				);
-				$page_stats = [];
+
 				$jobs = [];
 				foreach( $res as $row ) {
-					$page_stats[$row->page_id] = 1;
-				}
-				foreach( $page_stats as $page_id => $dummy_value ) {
-					$jobs[] = new PageQualiyRefreshJob( Title::newFromId( $page_id ) );
+					$jobs[] = new PageQualiyRefreshJob( Title::newFromId( $row->page_id ) );
 				}
 				JobQueueGroup::singleton()->push( $jobs );
 			}
