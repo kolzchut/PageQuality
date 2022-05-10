@@ -147,6 +147,18 @@ class PageQualityReportPager extends TablePager {
 		if ( \ExtensionRegistry::getInstance()->isLoaded ( 'ArticleType' ) && !empty( $this->opts->getValue( 'article_type' ) ) ) {
 			$info = array_merge_recursive( $info, ArticleType::getJoin( $this->opts->getValue( 'article_type' ), "pq_score.page_id" ) );
 		}
+
+		$from_ts = 0;
+		$to_ts = wfTimestamp();
+		if ( !empty( $this->opts->getValue( 'from_date' ) ) ) {
+			$from_ts = DateTime::createFromFormat( 'Y-m-d', $this->opts->getValue('from_date') )->setTime(0, 0)->getTimestamp();
+			$info['conds'][] = "timestamp > " . $from_ts;
+		}
+		if ( !empty( $this->opts->getValue( 'to_date' ) ) ) {
+			$to_ts = DateTime::createFromFormat( 'Y-m-d', $this->opts->getValue('to_date') )->setTime(0, 0)->modify( '+1 days' )->getTimestamp();
+			$info['conds'][] = "timestamp < " . $to_ts;
+		}
+
 		switch ( $this->report_type ) {
 			case "all":
 				$info['conds'][] = "score > 1";
@@ -159,31 +171,33 @@ class PageQualityReportPager extends TablePager {
 				$info['conds'][] = "score <= " . PageQualityScorer::getSetting( "red" );
 				break;
 			case "declines":
-				$info['fields'][] = 'new_score';
-				$info['conds'][] = "new_score >= " . PageQualityScorer::getSetting( "red" );
-				$info['conds'][] = "old_score < " . PageQualityScorer::getSetting( "red" );
+				$info = [
+					'tables' => [ 'pq_score_log AS pq_a', 'pq_score_log AS pq_b' ],
+					'fields' => [ 'pq_a.page_id as page_id', 'pq_a.new_score AS score', 'pq_a.timestamp as timestamp', 'pq_b.old_score AS old_score', 'pq_b.timestamp as pq_bts'],
+					'conds' => [ "pq_a.timestamp > $from_ts AND pq_a.timestamp < $to_ts", "pq_b.timestamp > $from_ts AND pq_b.timestamp < $to_ts" , "pq_a.timestamp != pq_b.timestamp" ],
+					'join_conds' => [ "pq_a" => ["LEFT JOIN", ["pq_a.page_id=pq_b.page_id"] ] ],
+					'options' => [ 'ORDER BY' => 'timestamp ASC, pq_bts DESC', 'GROUP BY' => 'pq_a.page_id' ]
+				];
 				break;
 			case "improvements":
-				$info['fields'][] = 'new_score';
-				$info['conds'][] = "new_score < " . PageQualityScorer::getSetting( "red" );
-				$info['conds'][] = "old_score >= " . PageQualityScorer::getSetting( "red" );
+				$info = [
+					'tables' => [ 'pq_score_log AS pq_a', 'pq_score_log AS pq_b' ],
+					'fields' => [ 'pq_a.page_id as page_id', 'pq_a.new_score AS score', 'pq_a.timestamp as timestamp', 'pq_b.old_score AS old_score', 'pq_b.timestamp as pq_bts'],
+					'conds' => [ "pq_a.timestamp > $from_ts AND pq_a.timestamp < $to_ts", "pq_b.timestamp > $from_ts AND pq_b.timestamp < $to_ts" , "pq_a.timestamp != pq_b.timestamp" ],
+					'join_conds' => [ "pq_a" => ["LEFT JOIN", ["pq_a.page_id=pq_b.page_id"] ] ],
+					'options' => [ 'ORDER BY' => 'timestamp ASC, pq_bts DESC', 'GROUP BY' => 'pq_a.page_id' ]
+				];
 				break;
 			default:
 				$info['tables'][] = 'pq_issues';
 				$info['conds']['pq_type'] = $this->report_type;
 				$info['join_conds']["pq_issues"] = ["LEFT JOIN", ["pq_score.page_id=pq_issues.page_id"] ];
 		}
-		if ( !empty( $this->opts->getValue( 'from_date' ) ) ) {
-			$info['conds'][] = "timestamp > " . DateTime::createFromFormat( 'Y-m-d', $this->opts->getValue('from_date') )->getTimestamp();
-		}
-		if ( !empty( $this->opts->getValue( 'to_date' ) ) ) {
-			$info['conds'][] = "timestamp < " . DateTime::createFromFormat( 'Y-m-d', $this->opts->getValue('to_date') )->getTimestamp();
-		}
 		return $info;
 	}
 
 	public function getDefaultSort() {
-		return 'pq_score.page_id';
+		return 'page_id';
 	}
 
 	public function isFieldSortable( $name ) {

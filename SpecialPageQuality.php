@@ -382,11 +382,12 @@ class SpecialPageQuality extends SpecialPage {
 		$dbr = wfGetDB( DB_REPLICA );
 
 		$res = $dbr->select(
-			"pq_score_log",
-			'*',
-			[ "timestamp > $from_date AND timestamp < $to_date" ],
+			[ 'pq_score_log AS pq_a', 'pq_score_log AS pq_b' ],
+			[ 'pq_a.page_id as page_id', 'pq_a.new_score AS new_score', 'pq_a.timestamp as pq_ats', 'pq_b.old_score AS old_score', 'pq_b.timestamp as pq_bts' ],
+			[ "pq_a.timestamp > $from_date AND pq_a.timestamp < $to_date", "pq_b.timestamp > $from_date AND pq_b.timestamp < $to_date" , "pq_a.timestamp != pq_b.timestamp"],
 			__METHOD__,
-			array( 'ORDER BY' => 'timestamp ASC' ),
+			array( 'ORDER BY' => 'pq_ats ASC, pq_bts DESC', 'GROUP BY' => 'pq_a.page_id' ),
+			array( "pq_a" => array( "LEFT JOIN", array("pq_a.page_id=pq_b.page_id" ) ) )
 		);
 
 		// We might have multiple entries for the same page within the selected time frame, the below code will ensure that only the latest log is considered in that case.
