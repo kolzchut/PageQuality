@@ -71,8 +71,7 @@ class PageQualityScorerReadability extends PageQualityScorer{
 
 		$dom = new DOMDocument('1.0', 'utf-8');
 		$dom->loadHTML( '<?xml encoding="utf-8" ?>' . strip_tags( self::$text, ['p', 'table', 'tr', 'th', 'td', 'div', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5'] ) );
-		$pNodes = $dom->getElementsByTagName('div');
-		foreach ( $pNodes as $pNode ) {
+		foreach ( $dom->childNodes as $pNode ) {
 			$this->recurseDomNodes( $pNode );
 		}
 		return $this->response;
@@ -83,12 +82,19 @@ class PageQualityScorerReadability extends PageQualityScorer{
             foreach ($pNode->childNodes as $childNode) {
 				$this->recurseDomNodes( $childNode );
             }
+		} else if ( $pNode->hasChildNodes() && count( $pNode->firstChild->childNodes ) > 1 ) {
+            foreach ( $pNode->firstChild->childNodes as $childNode ) {
+				$this->recurseDomNodes( $childNode );
+            }
 		} else {
 			if ( $pNode->hasChildNodes() ) {
 				if ( stripos($pNode->getAttribute('class'), "emphasis-item-text") === false ) {
 					$this->evaluateParagraphs( $pNode->firstChild->nodeValue );
 				}
 			} else {
+				if ( empty( trim( $pNode->nodeValue ) ) ) {
+					return;
+				}
 				$this->evaluateParagraphs( $pNode->nodeValue );
 			}
 		}

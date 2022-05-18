@@ -174,7 +174,7 @@ class PageQualityReportPager extends TablePager {
 				$info = [
 					'tables' => [ 'pq_score_log AS pq_a', 'pq_score_log AS pq_b' ],
 					'fields' => [ 'pq_a.page_id as page_id', 'pq_a.new_score AS score', 'pq_a.timestamp as timestamp', 'pq_b.old_score AS old_score', 'pq_b.timestamp as pq_bts'],
-					'conds' => [ "pq_a.timestamp > $from_ts AND pq_a.timestamp < $to_ts", "pq_b.timestamp > $from_ts AND pq_b.timestamp < $to_ts" , "pq_a.timestamp != pq_b.timestamp" ],
+					'conds' => [ "pq_a.timestamp > $from_ts AND pq_a.timestamp < $to_ts", "pq_b.timestamp > $from_ts AND pq_b.timestamp < $to_ts", "pq_a.page_id = pq_b.page_id" ],
 					'join_conds' => [ "pq_a" => ["LEFT JOIN", ["pq_a.page_id=pq_b.page_id"] ] ],
 					'options' => [ 'ORDER BY' => 'timestamp ASC, pq_bts DESC', 'GROUP BY' => 'pq_a.page_id' ]
 				];
@@ -183,7 +183,7 @@ class PageQualityReportPager extends TablePager {
 				$info = [
 					'tables' => [ 'pq_score_log AS pq_a', 'pq_score_log AS pq_b' ],
 					'fields' => [ 'pq_a.page_id as page_id', 'pq_a.new_score AS score', 'pq_a.timestamp as timestamp', 'pq_b.old_score AS old_score', 'pq_b.timestamp as pq_bts'],
-					'conds' => [ "pq_a.timestamp > $from_ts AND pq_a.timestamp < $to_ts", "pq_b.timestamp > $from_ts AND pq_b.timestamp < $to_ts" , "pq_a.timestamp != pq_b.timestamp" ],
+					'conds' => [ "pq_a.timestamp > $from_ts AND pq_a.timestamp < $to_ts", "pq_b.timestamp > $from_ts AND pq_b.timestamp < $to_ts", "pq_a.page_id = pq_b.page_id" ],
 					'join_conds' => [ "pq_a" => ["LEFT JOIN", ["pq_a.page_id=pq_b.page_id"] ] ],
 					'options' => [ 'ORDER BY' => 'timestamp ASC, pq_bts DESC', 'GROUP BY' => 'pq_a.page_id' ]
 				];
