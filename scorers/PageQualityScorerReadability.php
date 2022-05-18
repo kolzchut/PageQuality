@@ -69,14 +69,24 @@ class PageQualityScorerReadability extends PageQualityScorer{
 			}
 		}
 
-		$dom = new DOMDocument('1.0', 'utf-8');
-		$dom->loadHTML( '<?xml encoding="utf-8" ?>' . "<html>" . strip_tags( self::$text, ['p', 'table', 'tr', 'th', 'td', 'div', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5'] ) . "</html>" );
-
+		$dom = self::loadDOM( self::$text );
 		$pNodes = $dom->getElementsByTagName('html');
 		foreach ( $pNodes as $pNode ) {
 			$this->recurseDomNodes( $pNode );
 		}
 		return $this->response;
+	}
+
+	/**
+	 * @param string $text
+	 *
+	 * @return DOMDocument|null
+	 */
+	public static function loadDOM( $text ) {
+		$text = strip_tags( $text,
+			[ 'p', 'table', 'tr', 'th', 'td', 'div', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5' ]
+		);
+		return parent::loadDOM( $text );
 	}
 
 	public function recurseDomNodes( $pNode ) {
