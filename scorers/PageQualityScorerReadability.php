@@ -70,31 +70,29 @@ class PageQualityScorerReadability extends PageQualityScorer{
 		}
 
 		$dom = new DOMDocument('1.0', 'utf-8');
-		$dom->loadHTML( '<?xml encoding="utf-8" ?>' . strip_tags( self::$text, ['p', 'table', 'tr', 'th', 'td', 'div', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5'] ) );
-		foreach ( $dom->childNodes as $pNode ) {
+		$dom->loadHTML( '<?xml encoding="utf-8" ?>' . "<html>" . strip_tags( self::$text, ['p', 'table', 'tr', 'th', 'td', 'div', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5'] ) . "</html>" );
+
+		$pNodes = $dom->getElementsByTagName('html');
+		foreach ( $pNodes as $pNode ) {
 			$this->recurseDomNodes( $pNode );
 		}
 		return $this->response;
 	}
 
 	public function recurseDomNodes( $pNode ) {
-		if ( $pNode->hasChildNodes() && count( $pNode->childNodes ) > 1 ) {
+		if ( $pNode->hasChildNodes() && count( $pNode->childNodes ) > 0 ) {
             foreach ($pNode->childNodes as $childNode) {
 				$this->recurseDomNodes( $childNode );
             }
-		} else if ( $pNode->hasChildNodes() && count( $pNode->firstChild->childNodes ) > 1 ) {
+		} else if ( $pNode->hasChildNodes() && $pNode->firstChild->hasChildNodes() ) {
             foreach ( $pNode->firstChild->childNodes as $childNode ) {
 				$this->recurseDomNodes( $childNode );
             }
 		} else {
-			if ( $pNode->hasChildNodes() ) {
-				if ( stripos($pNode->getAttribute('class'), "emphasis-item-text") === false ) {
-					$this->evaluateParagraphs( $pNode->firstChild->nodeValue );
-				}
-			} else {
-				if ( empty( trim( $pNode->nodeValue ) ) ) {
-					return;
-				}
+			if ( empty( trim( $pNode->nodeValue ) ) ) {
+				return;
+			}
+			if ( stripos($pNode->parentNode->getAttribute('class'), "emphasis-item-text") === false ) {
 				$this->evaluateParagraphs( $pNode->nodeValue );
 			}
 		}
