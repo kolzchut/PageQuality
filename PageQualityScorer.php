@@ -131,6 +131,8 @@ abstract class PageQualityScorer{
 
 	/**
 	 * @param string $text
+	 *
+	 * @return DOMDocument|null
 	 */
 	public static function loadDOM( $text ) {
 		// @todo load only actual page content. right now this will also load stuff like the "protectedpagewarning" message
