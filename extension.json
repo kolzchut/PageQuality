@@ -9,8 +9,10 @@
 	"AutoloadClasses": {
 		"PageQualityHooks": "PageQualityHooks.php",
 		"PageQualityScorer": "PageQualityScorer.php",
+		"PageQualityReportPager": "PageQualityReportPager.php",
 		"SpecialPageQuality": "SpecialPageQuality.php",
-		"PageQualityApi": "PageQualityApi.php"
+		"PageQualityApi": "PageQualityApi.php",
+		"PageQualiyRefreshJob": "PageQualiyRefreshJob.php"
 	},
 	"AvailableRights": [
 		"viewpagequality",
@@ -29,6 +31,9 @@
 	},
 	"SpecialPages": {
 		"PageQuality": "SpecialPageQuality"
+	},
+	"JobClasses": {
+		"updatePageQuality": "PageQualiyRefreshJob"
 	},
 	"Hooks": {
 		"LoadExtensionSchemaUpdates": "PageQualityHooks::onLoadExtensionSchemaUpdate",

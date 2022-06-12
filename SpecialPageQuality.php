@@ -1,4 +1,6 @@
 <?php
+use MediaWiki\Extension\ArticleContentArea\ArticleContentArea;
+use MediaWiki\Extension\ArticleType\ArticleType;
 
 class SpecialPageQuality extends SpecialPage {
 
@@ -10,9 +12,9 @@ class SpecialPageQuality extends SpecialPage {
 
 	function execute( $subpage ) {
 		$linkDefs = [
-			'pq_settings' => 'Special:PageQuality/settings',
 			'pq_reports' => 'Special:PageQuality/reports',
 			'pq_history' => 'Special:PageQuality/history',
+			'pq_settings' => 'Special:PageQuality/settings',
 		];
 		$links = [];
 		foreach ( $linkDefs as $name => $page ) {
@@ -65,10 +67,7 @@ class SpecialPageQuality extends SpecialPage {
 		}
 		$tabsContent = '
 			<div id="settings_list" style="margin-top:10px;">
-				<form action="' . $save_link . '" method="post">
 					'. $settings_html .'
-					<button type="submit" class="btn btn-primary">' . $this->msg( 'pq_settings_submit' )->escaped() . '</button>
-				</form>
 			</div>';
 
 
@@ -101,6 +100,7 @@ class SpecialPageQuality extends SpecialPage {
 		$this->getOutput()->setPageTitle( $this->msg( 'pq_settings_title' ) );
 
 		$dbw = wfGetDB( DB_MASTER );
+		$dbr = wfGetDB( DB_REPLICA );
 
 		if ( $this->getRequest()->getVal('save') ==  1 ) {
 			foreach( PageQualityScorer::getAllScorers() as $scorer_class ) {
@@ -142,16 +142,27 @@ class SpecialPageQuality extends SpecialPage {
 					);
 				}
 			}
+			if ( $this->getRequest()->getVal('regenerate_scores') == "yes" ) {
+				$dbw->delete( 'pq_issues', '*' );
+
+				$res = $dbr->select( 
+					['page'],
+					['page_id'],
+					'*',
+					__METHOD__,
+				);
+
+				$jobs = [];
+				foreach( $res as $row ) {
+					$jobs[] = new PageQualiyRefreshJob( Title::newFromId( $row->page_id ) );
+				}
+				JobQueueGroup::singleton()->push( $jobs );
+			}
 		}
 
 		$saved_settings_values = PageQualityScorer::getSettingValues();
 
 		$save_link = $wgScript . '?title=Special:PageQuality/settings&save=1';
-		$html = '
-		<div class="" style="">
-			<form action="' . $save_link . '" method="post">
-		';
-
 		$tabPanels = [];
 
 		$tabPanels[] = $this->getGeneralSettingTab( $save_link, $saved_settings_values );
@@ -191,10 +202,7 @@ class SpecialPageQuality extends SpecialPage {
 
 			$tabsContent = '
 				<div id="settings_list" style="margin-top:10px;">
-					<form action="' . $save_link . '" method="post">
 						'. $settings_html .'
-						<button type="submit" class="btn btn-primary">' . $this->msg( 'pq_settings_submit' )->escaped() . '</button>
-					</form>
 				</div>';
 
 
@@ -230,126 +238,102 @@ class SpecialPageQuality extends SpecialPage {
 			'content' => $indexLayout
 		] );
 
-		$this->getOutput()->addHTML( $form );
+		$html = '
+		<form action="' . $save_link . '" method="post">
+			'. $form .'
+				<input type="checkbox" id="regenerate_scores" name="regenerate_scores" value="yes">
+				<label for="regenerate_scores"> '. $this->msg( "regenerate_scores_checkbox" ) .'</label><br>
+				<button type="submit" class="btn btn-primary">' . $this->msg( 'pq_settings_submit' )->escaped() . '</button>
+		</form>
+		';
+
+		$this->getOutput()->addHTML( $html );
 		$this->getOutput()->addModules( 'ext.page_quality.special' );
 
 	}
 
 	function showListReport( $report_type ) {
-		PageQualityScorer::loadAllScoreres();
+		$from_date = $this->getRequest()->getVal( 'from_date', "" );
+		$to_date = $this->getRequest()->getVal( 'to_date', "" );
 
-		$dbr = wfGetDB( DB_REPLICA );
-		$res = $dbr->select(
-			"pq_issues",
-			'*',
-			[true],
-			__METHOD__
-		);
-		$page_stats = [];
-		foreach( $res as $row ) {
-			$type = $row->pq_type;
-			$score = $row->score;
-			$page_id = $row->page_id;
-			if ( !array_key_exists( $page_id, $page_stats ) ) {
-				$page_stats[$page_id] = [ 'score' => 0 ];
-			}
-			$page_stats[$page_id]['score'] += $score;
-			if ( !array_key_exists( $type, $page_stats[$page_id] ) ) {
-				$page_stats[$page_id][$type] = 0;
-			}
-			$page_stats[$page_id][$type]++;
+
+		$formDescriptor = [];
+		if ( \ExtensionRegistry::getInstance()->isLoaded ( 'ArticleContentArea' ) ) {
+			$valid_content_areas = ArticleContentArea::getValidContentAreas();
+			$formDescriptor['article_content_type'] = [
+				'type' => 'select',
+				'name' => 'article_content_type',
+				'label-message' => 'article_content_type',
+				'options' => [ "" => "" ] + array_combine($valid_content_areas, $valid_content_areas),
+			];
+		}
+		if ( \ExtensionRegistry::getInstance()->isLoaded ( 'ArticleType' ) ) {
+			$valid_article_types = ArticleType::getValidArticleTypes();
+			$formDescriptor['article_article_type'] = [
+				'type' => 'select',
+				'name' => 'article_type',
+				'label-message' => 'article_type',
+				'options' => [ "" => "" ] + array_combine($valid_article_types, $valid_article_types),
+			];
 		}
 
-		if ( $report_type == "red_all" ) {
-			$result = [];
-			foreach( $page_stats as $page_id => $page_data ) {
-				if ( $page_data['score'] > PageQualityScorer::getSetting( "red" ) ) {
-					$result[$page_id] = $page_data[$report_type];
-				}
-			}
+		$formDescriptor['from_date'] = [
+			'type' => 'date',
+			'name' => 'from_date',
+			'label' => $this->msg( 'pg_history_form_from_date' ),
+			'default' => $from_date,
+		];
+		$formDescriptor['to_date'] = [
+			'type' => 'date',
+			'name' => 'to_date',
+			'label' => $this->msg( 'pg_history_form_to_date' ),
+			'default' => $to_date,
+		];
+		if ( $report_type == "all" ) {
+			$this->getOutput()->setPageTitle( $this->msg( "total_scanned_pages" )->escaped() );
+		} else if ( $report_type == "red_all" ) {
+			$this->getOutput()->setPageTitle( $this->msg( "red_scanned_pages" )->escaped() );
 		} else if ( $report_type == "yellow_all" ) {
-			$result = [];
-			foreach( $page_stats as $page_id => $page_data ) {
-				if ( $page_data['score'] > 0 && $page_data['score'] <= PageQualityScorer::getSetting( "red" ) ) {
-					$result[$page_id] = $page_data[$report_type];
-				}
-			}
+			$this->getOutput()->setPageTitle( $this->msg( "yellow_scanned_pages" )->escaped() );
+		} else if ( $report_type == "declines" ) {
+			$this->getOutput()->setPageTitle( $this->msg( "declining_pages" )->escaped() );
+		} else if ( $report_type == "improvements" ) {
+			$this->getOutput()->setPageTitle( $this->msg( "improving_pages" )->escaped() );
 		} else {
-			$result = [];
-			foreach( $page_stats as $page_id => $page_data ) {
-				if ( array_key_exists( $report_type, $page_data ) ) {
-					$result[$page_id] = $page_data[$report_type];
-				}
-			}
+			$all_checklist = PageQualityScorer::getAllChecksList();
+			$this->getOutput()->setPageTitle( $this->msg( "scorer_type_count", $this->msg( $all_checklist[$report_type] ) )->escaped() );
 		}
 
+		$htmlForm = HTMLForm::factory( 'ooui', $formDescriptor, $this->getContext() );
+		$htmlForm
+			->setMethod( 'get' )
+			->setWrapperLegendMsg( 'filter-legend' )
+			->setSubmitTextMsg( 'pg_history_form_submit' )
+			->prepareForm()
+			->displayForm( false );
 
-		$html = '
-			<table class="wikitable sortable">
-			<tr>
-				<th>
-					' . $this->msg('pq_report_pagename' )->escaped() . '
-				</th>
-				<th>
-					' . $this->msg('pq_report_page_score' )->escaped() . '
-				</th>
-				<th>
-					' . $this->msg('pq_report_page_status' )->escaped() . '
-				</th>
-			';
-		$all_checklist = PageQualityScorer::getAllChecksList();
-		$col = array_column( $all_checklist, "severity" );
-		array_multisort( $col, SORT_DESC, $all_checklist );
-		foreach( $all_checklist as $type => $type_data ) {
-			$html .= '
-				<th>
-					' . $this->msg( $type_data['name'] )->escaped() .'
-				</th>
-			';
+		$opts = ( new FormOptions() );
+		$opts->add( 'article_content_type', '' );
+		$opts->add( 'article_type', '' );
+		$opts->add( 'from_date', '' );
+		$opts->add( 'to_date', '' );
+		$opts->fetchValuesFromRequest( $this->getRequest() );
+
+		if ( !empty( $from_date ) ) {
+			$opts->setValue( 'from_date', $from_date, true );
 		}
-		$html .= '
-			</tr>';
-
-		foreach( $page_stats as $page_id => $page_data ) {
-			if ( !array_key_exists( $page_id, $result ) ) {
-				continue;
-			}
-
-			// Messages used next: pq_report_page_status_red, pq_report_page_status_yellow, pq_report_page_status_green
-			$page_status_code = $page_data['score'] > PageQualityScorer::getSetting( "red" ) ? "red" : ( $page_data['score'] > 0 ? "yellow" : "green" );
-
-			$html .= '
-				<tr>
-					<td>
-						' . $this->getLinkRenderer()->makeKnownLink( Title::newFromId( $page_id ) ) . '
-					</td>
-					<td>
-						' . $page_data['score'] . '
-					</td>
-					<td>
-						' . $this->msg( 'pq_report_page_status_' . $page_status_code )->escaped() . '
-					</td>
-				';
-			foreach( $all_checklist as $type => $type_data ) {
-				$counter = 0;
-				if ( array_key_exists( $type, $page_data ) ) {
-					$counter = $page_data[$type];
-				}
-				$html .= '
-					<td>
-						'. $counter .'
-					</td>
-				';
-			}
-			$html .= '
-				</tr>';
-
+		if ( !empty( $to_date ) ) {
+			$opts->setValue( 'to_date', $to_date, true );
 		}
-		$html .= '</table>';
-		$this->getOutput()->addHTML( $html );
+
+		$pager = new PageQualityReportPager( $this->getContext(), $this->getLinkRenderer(), $opts, $report_type );
+
+		$this->getOutput()->addParserOutputContent( $pager->getFullOutput() );	
 	}
 
 	function showChangeHistoryForm() {
+		$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_history' ) );
+
 		$from = $this->getRequest()->getVal( 'from_date', null );
 		$to = $this->getRequest()->getVal( 'to_date', null );
 
@@ -357,13 +341,13 @@ class SpecialPageQuality extends SpecialPage {
 			'from_date' => [
 				'type' => 'date',
 				'name' => 'from_date',
-				'label' => 'From Date',
+				'label' => $this->msg( 'pg_history_form_from_date' ),
 				'default' => $from,
 			],
 			'to_date' => [
 				'type' => 'date',
 				'name' => 'to_date',
-				'label' => 'To Date',
+				'label' => $this->msg( 'pg_history_form_to_date' ),
 				'default' => $to,
 			],
 		];
@@ -371,7 +355,7 @@ class SpecialPageQuality extends SpecialPage {
 		$htmlForm = new HTMLForm( $formDescriptor, $this->getContext() );
 		$htmlForm->setFormIdentifier( 'filter_by_date' );
 		$htmlForm
-			->setSubmitText( 'Filter' )
+			->setSubmitText( $this->msg( 'pg_history_form_submit' ) )
 			->setSubmitCallback( [ $this, 'showChangeHistory' ] )
 			->prepareForm()
 			->displayForm( false );
@@ -380,32 +364,44 @@ class SpecialPageQuality extends SpecialPage {
 	function showChangeHistory() {
 		$from = $this->getRequest()->getVal( 'from_date', null );
 		$to = $this->getRequest()->getVal( 'to_date', null );
-		if ( empty( $from ) || empty( $to ) ) {
-			return;
+
+		$from_date = 0;
+		if ( !empty( $from ) ) {
+			$from_date = DateTime::createFromFormat( 'Y-m-d', $from )->setTime(0, 0)->getTimestamp();
 		}
 
-		$from_date = DateTime::createFromFormat( 'Y-m-d', $from )->getTimestamp();
-		$to_date = DateTime::createFromFormat( 'Y-m-d', $to )->getTimestamp();
+		$to_date = wfTimestamp();
+		if ( !empty( $to ) ) {
+			$to_date = DateTime::createFromFormat( 'Y-m-d', $to )->setTime(0, 0)->modify( '+1 days' )->getTimestamp();
+		}
+
+		if ( $to_date <= $from_date ) {
+			return;
+		}
 
 		$dbr = wfGetDB( DB_REPLICA );
 
 		$res = $dbr->select(
-			"pq_score_log",
-			'*',
-			[ "timestamp > $from_date AND timestamp < $to_date" ],
-			__METHOD__
+			[ 'pq_score_log AS pq_a', 'pq_score_log AS pq_b' ],
+			[ 'pq_a.page_id as page_id', 'pq_b.page_id as page_id_b', 'pq_a.new_score AS new_score', 'pq_a.timestamp as pq_ats', 'pq_b.old_score AS old_score', 'pq_b.timestamp as pq_bts' ],
+			[ "pq_a.timestamp > $from_date AND pq_a.timestamp < $to_date", "pq_b.timestamp > $from_date AND pq_b.timestamp < $to_date", "pq_a.page_id = pq_b.page_id"],
+			__METHOD__,
+			array( 'ORDER BY' => 'pq_ats ASC, pq_bts DESC', 'GROUP BY' => 'pq_a.page_id' ),
+			array( "pq_b" => array( "INNER JOIN", array("pq_a.page_id=pq_b.page_id" ) ) )
 		);
 
-		$improvements = 0;
-		$declines = 0;
+		// We might have multiple entries for the same page within the selected time frame, the below code will ensure that only the latest log is considered in that case.
+		$improvements = [];
+		$declines = [];
 		foreach( $res as $row ) {
 			if ( $row->new_score > PageQualityScorer::getSetting( "red" ) && $row->old_score < PageQualityScorer::getSetting( "red" ) ) {
-				$declines++;
+				$declines[$row->page_id] = 1;
+				$improvements[$row->page_id] = 0;
 			} else if ( $row->new_score < PageQualityScorer::getSetting( "red" ) && $row->old_score > PageQualityScorer::getSetting( "red" ) ) {
-				$improvements++;
+				$improvements[$row->page_id] = 1;
+				$declines[$row->page_id] = 0;
 			}
 		}
-
 		$html = '
 			<table class="wikitable sortable">
 			<tr>
@@ -418,7 +414,7 @@ class SpecialPageQuality extends SpecialPage {
 			';
 		$page = 'Special:PageQuality/reports/declines';
 		$title = Title::newFromText( $page );
-		$link = $this->getLinkRenderer()->makeLink( $title, $declines );
+		$link = $this->getLinkRenderer()->makeLink( $title, array_sum( $declines ), [], [ 'from_date' => $from, 'to_date' => $to ] );
 
 		$html .= '
 			<tr>
@@ -432,7 +428,7 @@ class SpecialPageQuality extends SpecialPage {
 
 		$page = 'Special:PageQuality/reports/improvements';
 		$title = Title::newFromText( $page );
-		$link = $this->getLinkRenderer()->makeLink( $title, $improvements );
+		$link = $this->getLinkRenderer()->makeLink( $title, array_sum( $improvements ), [], [ 'from_date' => $from, 'to_date' => $to ] );
 
 		$html .= '
 			<tr>
@@ -453,6 +449,8 @@ class SpecialPageQuality extends SpecialPage {
 
 	function showStatistics() {
 		PageQualityScorer::loadAllScoreres();
+
+		$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_reports_dashboard' ) );
 
 		$dbr = wfGetDB( DB_REPLICA );
 
@@ -478,13 +476,19 @@ class SpecialPageQuality extends SpecialPage {
 			$page_stats[$page_id][$type]++;
 
 			if ( !array_key_exists( $type, $scorer_stats ) ) {
-				$scorer_stats[$type] = 0;
+				$scorer_stats[$type] = [];
 			}
-			$scorer_stats[$type]++;
+			if ( !array_key_exists( $page_id, $scorer_stats[$type] ) ) {
+				$scorer_stats[$type][$page_id] = 0;
+			}
+			$scorer_stats[$type][$page_id]++;
 		}
 		$red_page_count = count( array_filter( array_column($page_stats, "score"), function( $a ) { return $a > PageQualityScorer::getSetting( "red" ); } ) );
 		$yellow_page_count = count( array_filter( array_column($page_stats, "score"), function( $a ) { return $a <= PageQualityScorer::getSetting( "red" ) && $a >0; } ) );
 
+		$page = 'Special:PageQuality/reports/all';
+		$title = Title::newFromText( $page );
+		$link = $this->getLinkRenderer()->makeLink( $title, count( $page_stats ) );
 
 		$html = '
 			<table class="wikitable sortable">
@@ -503,7 +507,7 @@ class SpecialPageQuality extends SpecialPage {
 					' . $this->msg( 'total_scanned_pages' )->escaped() . '
 				</td>
 				<td>
-					' . count( $page_stats ) .'
+					' . $link .'
 				</td>
 			</tr>';
 
@@ -555,7 +559,7 @@ class SpecialPageQuality extends SpecialPage {
 			if ( array_key_exists( $type, $scorer_stats ) ) {
 				$page = "Special:PageQuality/reports/$type";
 				$title = Title::newFromText( $page );
-				$link = $this->getLinkRenderer()->makeLink( $title, $scorer_stats[$type] );
+				$link = $this->getLinkRenderer()->makeLink( $title, count( $scorer_stats[$type] ) );
 
 				$html .= '
 					<tr>
@@ -583,7 +587,7 @@ class SpecialPageQuality extends SpecialPage {
 		$page_id = $this->getRequest()->getVal('page_id');
 		$title = Title::newFromId( $page_id );
 
-		$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_report_for_title' ) . " " . $title->getText() );
+		$this->getOutput()->setPageTitle( $this->msg( 'pq_page_quality_report_for_title', $title->getText() ) );
 
 		$this->getOutput()->addHTML( self::getPageQualityReportHtml( $page_id ) );
 	}
@@ -649,11 +653,10 @@ class SpecialPageQuality extends SpecialPage {
 				';
 				foreach( $score_responses as $response ) {
 					if ( !empty( $response[ 'example' ] ) ) {
-						$html .= '
-								 <li class="list-group-item">
-								    ' . $response[ 'example' ] . '...
-								  </li>
-						';
+						$html .= 
+								 '<li class="list-group-item">' .
+						            trim( $response[ 'example' ] )  . '<span class="ellipsis">&hellip;</span>' .
+								  '</li>';
 					}
 				}
 				$html .= '

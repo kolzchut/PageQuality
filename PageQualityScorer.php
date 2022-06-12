@@ -131,6 +131,8 @@ abstract class PageQualityScorer{
 
 	/**
 	 * @param string $text
+	 *
+	 * @return DOMDocument|null
 	 */
 	public static function loadDOM( $text ) {
 		// @todo load only actual page content. right now this will also load stuff like the "protectedpagewarning" message
@@ -214,6 +216,11 @@ abstract class PageQualityScorer{
 			}
 		}
 		$dbw->delete(
+			'pq_score',
+			array( 'page_id' => $title->getArticleID() ),
+			__METHOD__
+		);
+		$dbw->delete(
 			'pq_issues',
 			array( 'page_id' => $title->getArticleID() ),
 			__METHOD__
@@ -253,6 +260,15 @@ abstract class PageQualityScorer{
 				array( 'IGNORE' )
 			);
 		}
+		$dbw->insert(
+			'pq_score',
+			[
+				'page_id'     => $title->getArticleID(),
+				'score'   => $score
+			],
+			__METHOD__,
+			array( 'IGNORE' )
+		);
 
 		return [$score, $responses];
 	}
