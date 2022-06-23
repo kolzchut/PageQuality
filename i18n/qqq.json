@@ -43,6 +43,8 @@
 	"pag_scorer_emphasis_length": "Emphasis line length - Error",
 	"pag_scorer_table_columns": "Max Columns in table",
 	"pag_scorer_table_rows": "Min Rows in table",
+	"pag_scorer_list_items_pre_level_max":"Max levels in a list item - Error",
+	"pag_scorer_list_items_pre_level_max_desc":"Max levels in a list item",
 	"page_scorer_exceeds": "Exceeds recommended limit of $1",
 	"page_scorer_minimum": "Does not meet the recommended limit of $1",
 	"page_scorer_inexistence": "Should not be present",
