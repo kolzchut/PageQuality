@@ -39,6 +39,13 @@ class PageQualityScorerReadability extends PageQualityScorer{
 			"severity" => PageQualityScorer::RED,
 			"default" => 30
 		],
+		"list_items_pre_level_max" => [
+			"name" => "pag_scorer_list_items_pre_level_max",
+			"description" => "pag_scorer_list_items_pre_level_max_desc",
+			"check_type" => "max",
+			"severity" => PageQualityScorer::RED,
+			"default" => 4
+		],
 	];
 
 	public $response = [];
@@ -84,12 +91,28 @@ class PageQualityScorerReadability extends PageQualityScorer{
 	 */
 	public static function loadDOM( $text ) {
 		$text = strip_tags( $text,
-			[ 'p', 'table', 'tr', 'th', 'td', 'div', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5' ]
+			[ 'p', 'table', 'tr', 'th', 'td', 'div', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5' ]
 		);
 		return parent::loadDOM( $text );
 	}
 
 	public function recurseDomNodes( $pNode ) {
+		if ( !$pNode instanceof DOMText && ( $pNode->tagName == "ul" || $pNode->tagName == "ol" ) ) {
+			if ( $pNode->hasChildNodes() ) {
+				$count_of_li = 0;
+	            foreach ($pNode->childNodes as $childNode) {
+	            	if ( !$childNode instanceof DOMText && $childNode->tagName == "li" ) {
+	            		$count_of_li++;
+	            	}
+	            }
+				if ( $count_of_li > self::getSetting( "list_items_pre_level_max" ) ) {
+					$this->response['list_items_pre_level_max'][] = [
+						"score" => self::getCheckList()['list_items_pre_level_max']['severity'],
+						"example" => mb_substr( $pNode->textContent, 0, 50)
+					];
+				}
+			}
+		}
 		if ( $pNode->hasChildNodes() && count( $pNode->childNodes ) > 0 ) {
             foreach ($pNode->childNodes as $childNode) {
 				$this->recurseDomNodes( $childNode );
