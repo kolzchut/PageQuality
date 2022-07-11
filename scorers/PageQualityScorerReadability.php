@@ -39,9 +39,9 @@ class PageQualityScorerReadability extends PageQualityScorer{
 			"severity" => PageQualityScorer::RED,
 			"default" => 30
 		],
-		"list_items_pre_level_max" => [
-			"name" => "pag_scorer_list_items_pre_level_max",
-			"description" => "pag_scorer_list_items_pre_level_max_desc",
+		"list_items_per_level_max" => [
+			"name" => "pag_scorer_list_items_per_level_max",
+			"description" => "pag_scorer_list_items_per_level_max_desc",
 			"check_type" => "max",
 			"severity" => PageQualityScorer::RED,
 			"default" => 4
@@ -105,9 +105,9 @@ class PageQualityScorerReadability extends PageQualityScorer{
 	            		$count_of_li++;
 	            	}
 	            }
-				if ( $count_of_li > self::getSetting( "list_items_pre_level_max" ) ) {
-					$this->response['list_items_pre_level_max'][] = [
-						"score" => self::getCheckList()['list_items_pre_level_max']['severity'],
+				if ( $count_of_li > self::getSetting( "list_items_per_level_max" ) ) {
+					$this->response['list_items_per_level_max'][] = [
+						"score" => self::getCheckList()['list_items_per_level_max']['severity'],
 						"example" => mb_substr( $pNode->textContent, 0, 50)
 					];
 				}
