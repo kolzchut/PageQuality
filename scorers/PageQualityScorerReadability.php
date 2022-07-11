@@ -44,7 +44,7 @@ class PageQualityScorerReadability extends PageQualityScorer{
 			"description" => "pag_scorer_list_items_per_level_max_desc",
 			"check_type" => "max",
 			"severity" => PageQualityScorer::RED,
-			"default" => 4
+			"default" => 10
 		],
 	];
 
