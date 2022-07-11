@@ -11,7 +11,7 @@ Elements with the CSS class `.pagequality-ignore` will be excluded from the audi
 ## Settings
 
 ## Permissions
-- "viewpagequality" is required to watch the lsit of issues and use the API.
+- "viewpagequality" is required to watch the list of issues and use the API.
 - "configpagequality" is required to edit the settings of this extension.
 
 ## Todo
