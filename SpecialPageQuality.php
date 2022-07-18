@@ -93,7 +93,7 @@ class SpecialPageQuality extends SpecialPage {
 
 		if ( $this->subpage === 'settings' ) {
 			$this->mRestriction = 'configpagequality';
-			$this->checkPermissions();;
+			$this->checkPermissions();
 		}
 
 		$this->getOutput()->enableOOUI();
@@ -145,7 +145,7 @@ class SpecialPageQuality extends SpecialPage {
 			if ( $this->getRequest()->getVal('regenerate_scores') == "yes" ) {
 				$dbw->delete( 'pq_issues', '*' );
 
-				$res = $dbr->select( 
+				$res = $dbr->select(
 					['page'],
 					['page_id'],
 					'*',
@@ -328,7 +328,7 @@ class SpecialPageQuality extends SpecialPage {
 
 		$pager = new PageQualityReportPager( $this->getContext(), $this->getLinkRenderer(), $opts, $report_type );
 
-		$this->getOutput()->addParserOutputContent( $pager->getFullOutput() );	
+		$this->getOutput()->addParserOutputContent( $pager->getFullOutput() );
 	}
 
 	function showChangeHistoryForm() {
@@ -653,7 +653,7 @@ class SpecialPageQuality extends SpecialPage {
 				';
 				foreach( $score_responses as $response ) {
 					if ( !empty( $response[ 'example' ] ) ) {
-						$html .= 
+						$html .=
 								 '<li class="list-group-item">' .
 						            trim( $response[ 'example' ] )  . '<span class="ellipsis">&hellip;</span>' .
 								  '</li>';

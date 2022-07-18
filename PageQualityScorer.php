@@ -37,10 +37,15 @@ abstract class PageQualityScorer{
 		// We do the following because strtr just didn't work right in utf-8 text
 		$replacements = "\n:,[]={}|*,";
 		$replacements = str_split( $replacements );
-		$replacements[]='،';
-
+		// Add the Arabic comma as well
+		$replacements[] = '،';
 		$text = str_replace( $replacements, ' ', $text );
+
+		// Remove comments
 		$text = preg_replace( '/<!--[\s\S]*?-->/', '', $text );
+		// Remove single-character words
+		$text = preg_replace( '/ . /', ' ', $text );
+		// Replace any type of space with a simple single space
 		$text = preg_replace( '/\s+/', ' ', $text );
 		$text = trim( $text );
 

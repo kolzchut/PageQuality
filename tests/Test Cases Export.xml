@@ -1,0 +1,222 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="he">
+  <siteinfo>
+    <sitename>Test</sitename>
+    <generator>MediaWiki 1.35.3</generator>
+    <case>first-letter</case>
+  </siteinfo>
+  <page>
+    <title>Test Case 1</title>
+    <ns>0</ns>
+    <revision>
+      <timestamp>2022-03-23T13:43:20Z</timestamp>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="233" sha1="0d64gd2d8ra4ovcfwh23vdq1o8m6ppr" xml:space="preserve">== Test Case 1 - emphasis_lines_min, emphasis_gov_symbol, callout_number ==
+=== Expected score - 3 ===
+* emphasis - No "government" line (yellow)
+* emphasis - not enough emphasis lines (yellow)
+* callout_number - no callouts (yellow)</text>
+      <sha1>0d64gd2d8ra4ovcfwh23vdq1o8m6ppr</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Test Case 2</title>
+    <ns>0</ns>
+    <id>18624</id>
+    <revision>
+	  <timestamp>2022-03-23T13:43:43Z</timestamp>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="932" sha1="0bdjr2zo2m5ltclpobsmyv2dvyw3w6n" xml:space="preserve">== Test Case 2 - emphasis_gov_symbol when it's not last ==
+===Expected score - 1 ===
+* emphasis - No "government" line (yellow)
+
+&lt;div class="emphasis-list"&gt;
+	&lt;div class="emphasis-item emphasis-type-government"&gt;
+		&lt;div class="emphasis-item-icon" title="הפניה לאתר ממשל רלבנטי לנושא שיכול לספק את מירב המידע"&gt;&lt;/div&gt;
+		&lt;div class="emphasis-item-text"&gt;ראו באתר הביטוח הלאומי&lt;/div&gt;
+	&lt;/div&gt;
+	&lt;div class="emphasis-item emphasis-type-money"&gt;
+		&lt;div class="emphasis-item-icon" title="ייתכן שיש משמעות כספית"&gt;&lt;/div&gt;
+		&lt;div class="emphasis-item-text"&gt;מגיעים לכם X שקלים&lt;/div&gt;
+	&lt;/div&gt;
+	&lt;div class="emphasis-item emphasis-type-question-mark"&gt;
+		&lt;div class="emphasis-item-icon" title="נושא פתוח"&gt;&lt;/div&gt;
+		&lt;div class="emphasis-item-text"&gt;אולי?&lt;/div&gt;
+	&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="wr-example"&gt;This exists just to ignore callout_number&lt;/div&gt;</text>
+      <sha1>0bdjr2zo2m5ltclpobsmyv2dvyw3w6n</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Test Case 3</title>
+    <ns>0</ns>
+    <revision>
+      <timestamp>2022-07-11T14:43:03Z</timestamp>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="1910" sha1="6804c421v7ve7nemb773blzq0o779nn" xml:space="preserve">===Expected score - 5 ===
+* Emphasis line is too long (yellow)
+* Emphasis line is too long (red)
+* Too many emphasis lines (red)
+
+&lt;div class="emphasis-list"&gt;
+	&lt;div class="emphasis-item emphasis-type-money"&gt;
+		&lt;div class="emphasis-item-icon" title="ייתכן שיש משמעות כספית"&gt;&lt;/div&gt;
+		&lt;div class="emphasis-item-text"&gt;There are more than 5 emphasis lines overall&lt;/div&gt;
+	&lt;/div&gt;
+	&lt;div class="emphasis-item emphasis-type-money"&gt;
+		&lt;div class="emphasis-item-icon" title="ייתכן שיש משמעות כספית"&gt;&lt;/div&gt;
+		&lt;div class="emphasis-item-text"&gt;There are more than 5 emphasis lines overall&lt;/div&gt;
+	&lt;/div&gt;
+	&lt;div class="emphasis-item emphasis-type-money"&gt;
+		&lt;div class="emphasis-item-icon" title="ייתכן שיש משמעות כספית"&gt;&lt;/div&gt;
+		&lt;div class="emphasis-item-text"&gt;There are more than 5 emphasis lines overall&lt;/div&gt;
+	&lt;/div&gt;
+	&lt;div class="emphasis-item emphasis-type-money"&gt;
+		&lt;div class="emphasis-item-icon" title="ייתכן שיש משמעות כספית"&gt;&lt;/div&gt;
+		&lt;div class="emphasis-item-text"&gt;There are more than 5 emphasis lines overall&lt;/div&gt;
+	&lt;/div&gt;
+	&lt;div class="emphasis-item emphasis-type-question-mark"&gt;
+		&lt;div class="emphasis-item-icon" title="נושא פתוח"&gt;&lt;/div&gt;
+		&lt;div class="emphasis-item-text"&gt;This emphasis line is more than 15 words but less than 30, so it should trigger a yellow warning&lt;/div&gt;
+	&lt;/div&gt;
+	&lt;div class="emphasis-item emphasis-type-government"&gt;
+		&lt;div class="emphasis-item-icon" title="הפניה לאתר ממשל רלבנטי לנושא שיכול לספק את מירב המידע"&gt;&lt;/div&gt;
+		&lt;div class="emphasis-item-text"&gt;This emphasis line is more than 30 words, so it's way, way, way, way, way, way, way, way, way, way, way, way, way, way, way, way, way, way, way, way, too long and should trigger a red error&lt;/div&gt;
+	&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="wr-example"&gt;This exists just to ignore callout_number&lt;/div&gt;
+{{סוג ערך|זכות}}</text>
+      <sha1>6804c421v7ve7nemb773blzq0o779nn</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Test Case 4</title>
+    <ns>0</ns>
+    <revision>
+      <timestamp>2022-04-03T10:07:42Z</timestamp>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="1716" sha1="198py02viibor8msjhthongoj8xh9ch" xml:space="preserve">== Test Case 4 - PageQualityScorerReadability: blocked_expressions, para_length, para_length_max, sentence_length, sentence_length_max ==
+===Expected score - 10 ===
+* 1 blocked expression (red)
+* 2 sentences too long (yellow)
+* 1 sentence too long (red)
+* 2 paragraphs too long (yellow)
+* 1 paragraph too long (red)
+
+supercalifragilisticexpialidocious
+
+sentence_length, para_length: This line should be more than 15 words but less than 30 (yellow warning).
+sentence_length_max: This line is more than 30 words, and it will also bring the paragraph's length to more than 40 words but less than 60 - we still need a few more words to make it to 30.
+
+para_length_max: The following lines will be short. However, the overall paragraph length will be more than 60 words. Way, way, more than 60 words. Way, way, more than 60 words. Way, way, more than 60 words. Way, way, more than 60 words. Way, way, more than 60 words. Way, way, more than 60 words. Way, way, more than 60 words. Way, way, more than 60 words. Way, way, more than 60 words. Way, way, more than 60 words.
+
+* sentence_length: This tests the behavior of list items as sentences and paragraphs; this line is more than 15 words.
+* para_length: This tests the behavior of a list item as a paragraph. Each sentence is not too long. The overall should be a bit more than 40 words and show a warning. So let's pad it with a few more words.
+
+&lt;!-- The following exist just to ignore other irrelevant audits --&gt;
+&lt;div class="emphasis-item emphasis-type-question-mark"&gt;&lt;/div&gt;
+&lt;div class="emphasis-item emphasis-type-question-mark"&gt;&lt;/div&gt;
+&lt;div class="emphasis-item emphasis-type-government"&gt;&lt;/div&gt;
+&lt;div class="wr-example"&gt;This exists just to ignore callout_number&lt;/div&gt;</text>
+      <sha1>198py02viibor8msjhthongoj8xh9ch</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Test Case 5</title>
+    <ns>0</ns>
+    <revision>
+      <timestamp>2022-03-23T13:56:42Z</timestamp>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="613" sha1="74u0as4k2b4yy6spai446utq84nmial" xml:space="preserve">== Test Case 5 - PageQualityScorerTableRules: table_columns, table_rows ==
+===Expected score - 2 ===
+* More than 3 columns in table (yellow)
+* Less than 3 rows in table (yellow)
+
+{|
+! table_columns: !! this table has more than 3 columns || Which isn't great !! and causes a warning
+|-
+| It also has || Less || than || 3 rows
+|-
+|}
+
+&lt;!-- The following exist just to ignore other irrelevant audits --&gt;
+&lt;div class="emphasis-item emphasis-type-question-mark"&gt;&lt;/div&gt;
+&lt;div class="emphasis-item emphasis-type-question-mark"&gt;&lt;/div&gt;
+&lt;div class="emphasis-item emphasis-type-government"&gt;&lt;/div&gt;
+&lt;div class="wr-example"&gt;&lt;/div&gt;</text>
+      <sha1>74u0as4k2b4yy6spai446utq84nmial</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Test Case 6</title>
+    <ns>0</ns>
+    <revision>
+      <timestamp>2022-07-11T14:29:04Z</timestamp>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="670" sha1="tb5s2s1b54i5r4bdd4d1n988m3wozz8" xml:space="preserve">== Test Case 6 - PageQualityScorerCalloutsRules:  callout_gaps, callout_section_begin ==
+===Expected score - 2 ===
+* callout_gaps (yellow)
+* callout_section_begin (yellow)
+
+&lt;div class="wr-example"&gt;Callout 1&lt;/div&gt;
+&lt;div class="wr-example"&gt;Callout 2&lt;/div&gt;
+
+== Section begins ==
+&lt;div class="wr-example"&gt;Callout 3&lt;/div&gt;
+There's a callout before the section text!
+
+&lt;!-- The following exist just to ignore other irrelevant audits --&gt;
+&lt;div class="emphasis-item emphasis-type-question-mark"&gt;&lt;/div&gt;
+&lt;div class="emphasis-item emphasis-type-question-mark"&gt;&lt;/div&gt;
+&lt;div class="emphasis-item emphasis-type-government"&gt;&lt;/div&gt;
+&lt;div class="wr-example"&gt;&lt;/div&gt;
+
+
+{{סוג ערך|זכות}}</text>
+      <sha1>tb5s2s1b54i5r4bdd4d1n988m3wozz8</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Test Case 7</title>
+    <ns>0</ns>
+    <revision>
+      <timestamp>2022-07-11T16:12:47Z</timestamp>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="541" sha1="h7jv2txfm8levrgdnby67z4r4vik6xd" xml:space="preserve">== Test Case 7 - PageQualityScorerReadability:  list_items_per_level_max ==
+===Expected score - 4 ===
+* 2 &amp;times;  list_items_per_level_max (red)
+
+* 1
+* 2
+* 3
+** 3.1
+** 3.2
+** 3.3
+** 3.4
+** 3.5
+* 4
+*# 4.1
+*# 4.2
+*# 4.3
+*# 4.4
+* 5
+
+&lt;!-- The following exist just to ignore other irrelevant audits --&gt;
+&lt;div class="emphasis-item emphasis-type-question-mark"&gt;&lt;/div&gt;
+&lt;div class="emphasis-item emphasis-type-question-mark"&gt;&lt;/div&gt;
+&lt;div class="emphasis-item emphasis-type-government"&gt;&lt;/div&gt;
+&lt;div class="wr-example"&gt;&lt;/div&gt;
+
+
+{{סוג ערך|זכות}}</text>
+      <sha1>h7jv2txfm8levrgdnby67z4r4vik6xd</sha1>
+    </revision>
+  </page>
+</mediawiki>
