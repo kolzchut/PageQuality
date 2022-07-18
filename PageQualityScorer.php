@@ -259,7 +259,7 @@ abstract class PageQualityScorer{
 					'revision_id' => $title->getLatestRevID(),
 					'new_score'   => $score,
 					'old_score'   => $old_score,
-					'timestamp' => (new DateTime())->getTimestamp()
+					'timestamp' => $dbw->timestamp()
 				],
 				__METHOD__,
 				array( 'IGNORE' )
