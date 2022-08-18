@@ -256,7 +256,6 @@ class SpecialPageQuality extends SpecialPage {
 		$from_date = $this->getRequest()->getVal( 'from_date', "" );
 		$to_date = $this->getRequest()->getVal( 'to_date', "" );
 
-
 		$formDescriptor = [];
 		if ( \ExtensionRegistry::getInstance()->isLoaded ( 'ArticleContentArea' ) ) {
 			$valid_content_areas = ArticleContentArea::getValidContentAreas();
@@ -352,10 +351,10 @@ class SpecialPageQuality extends SpecialPage {
 			],
 		];
 
-		$htmlForm = new HTMLForm( $formDescriptor, $this->getContext() );
-		$htmlForm->setFormIdentifier( 'filter_by_date' );
+		$htmlForm = HTMLForm::factory( 'ooui', $formDescriptor, $this->getContext() );
 		$htmlForm
-			->setSubmitText( $this->msg( 'pg_history_form_submit' ) )
+			->setFormIdentifier( 'filter_by_date' )
+			->setSubmitTextMsg( 'pg_history_form_submit' )
 			->setSubmitCallback( [ $this, 'showChangeHistory' ] )
 			->prepareForm()
 			->displayForm( false );
