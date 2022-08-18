@@ -12,7 +12,8 @@
 		"PageQualityReportPager": "PageQualityReportPager.php",
 		"SpecialPageQuality": "SpecialPageQuality.php",
 		"PageQualityApi": "PageQualityApi.php",
-		"PageQualiyRefreshJob": "PageQualiyRefreshJob.php"
+		"PageQualiyRefreshJob": "PageQualiyRefreshJob.php",
+		"MediaWiki\\Extensions\\PageQuality\\Maintenance\\PostDatabaseUpdate\\MigrateTimestampToMWFormat": "maintenance/PostDatabaseUpdate/migrateTimestampToMWFormat.php"
 	},
 	"AvailableRights": [
 		"viewpagequality",

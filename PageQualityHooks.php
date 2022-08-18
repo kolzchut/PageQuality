@@ -1,5 +1,6 @@
 <?php
 
+use MediaWiki\Extensions\PageQuality\Maintenance\PostDatabaseUpdate\MigrateTimestampToMWFormat;
 use MediaWiki\MediaWikiServices;
 
 class PageQualityHooks {
@@ -45,7 +46,16 @@ class PageQualityHooks {
 		$updater->addExtensionTable( 'pq_score', "$dir/pq_score.sql" );
 		$updater->addExtensionTable( 'pq_score_log', "$dir/pq_score_log.sql" );
 		$updater->addExtensionField( 'pq_settings', 'value_blob', "$dir/pq_settings_patch_add_value_blob.sql" );
-		$updater->modifyExtensionField( 'pq_score_log', 'timestamp', "$dir/pq_score_log_patch_change_timestamp.sql" );
+
+		// Change the timestamp field to a standard MediaWiki binary(14). This requires creating a new field, converting all values into it
+		// using a maintenance script, and then dropping the old field and renaming the new field
+		$updater->addExtensionField( 'pq_score_log', 'timestamp2', "$dir/pq_score_log_new_timestamp_2022-08-18.sql" );
+		$updater->addExtensionUpdate( [
+			'runMaintenance',
+			MigrateTimestampToMWFormat::class,
+			"$dir/../maintenance/migrateTimestampToMWFormat.php"
+		] );
+		$updater->modifyExtensionField( 'pq_score_log', 'timestamp', "$dir/pq_score_log_drop_old_timestamp_2022-08-18.sql" );
 	}
 
 }
