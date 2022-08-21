@@ -62,7 +62,7 @@ class PageQualityReportPager extends TablePager {
 				break;
 			case 'timestamp':
 				if ( !empty( $row->timestamp ) ) {
-					$formatted = (new DateTime())->setTimestamp( $row->timestamp )->format( 'j M y' );
+					$formatted = (new DateTime())->setTimestamp( wfTimestamp( TS_UNIX, $row->timestamp ) )->format( 'j M y' );
 				}
 				break;
 			case 'score':
@@ -151,11 +151,11 @@ class PageQualityReportPager extends TablePager {
 		$from_ts = 0;
 		$to_ts = wfTimestamp();
 		if ( !empty( $this->opts->getValue( 'from_date' ) ) ) {
-			$from_ts = DateTime::createFromFormat( 'Y-m-d', $this->opts->getValue('from_date') )->setTime(0, 0)->getTimestamp();
+			$from_ts = wfTimestamp( TS_MW, DateTime::createFromFormat( 'Y-m-d', $this->opts->getValue('from_date') )->setTime(0, 0)->getTimestamp() );
 			$info['conds'][] = "timestamp > " . $from_ts;
 		}
 		if ( !empty( $this->opts->getValue( 'to_date' ) ) ) {
-			$to_ts = DateTime::createFromFormat( 'Y-m-d', $this->opts->getValue('to_date') )->setTime(0, 0)->modify( '+1 days' )->getTimestamp();
+			$to_ts = wfTimestamp( TS_MW, DateTime::createFromFormat( 'Y-m-d', $this->opts->getValue('to_date') )->setTime(0, 0)->modify( '+1 days' )->getTimestamp() );
 			$info['conds'][] = "timestamp < " . $to_ts;
 		}
 

@@ -45,6 +45,7 @@ class PageQualityHooks {
 		$updater->addExtensionTable( 'pq_score', "$dir/pq_score.sql" );
 		$updater->addExtensionTable( 'pq_score_log', "$dir/pq_score_log.sql" );
 		$updater->addExtensionField( 'pq_settings', 'value_blob', "$dir/pq_settings_patch_add_value_blob.sql" );
+		$updater->modifyExtensionField( 'pq_score_log', 'timestamp', "$dir/pq_score_log_patch_change_timestamp.sql" );
 	}
 
 }

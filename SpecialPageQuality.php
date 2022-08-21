@@ -367,12 +367,12 @@ class SpecialPageQuality extends SpecialPage {
 
 		$from_date = 0;
 		if ( !empty( $from ) ) {
-			$from_date = DateTime::createFromFormat( 'Y-m-d', $from )->setTime(0, 0)->getTimestamp();
+			$from_date = wfTimestamp( TS_MW, DateTime::createFromFormat( 'Y-m-d', $from )->setTime(0, 0)->getTimestamp() );
 		}
 
 		$to_date = wfTimestamp();
 		if ( !empty( $to ) ) {
-			$to_date = DateTime::createFromFormat( 'Y-m-d', $to )->setTime(0, 0)->modify( '+1 days' )->getTimestamp();
+			$to_date = wfTimestamp( TS_MW, DateTime::createFromFormat( 'Y-m-d', $to )->setTime(0, 0)->modify( '+1 days' )->getTimestamp() );
 		}
 
 		if ( $to_date <= $from_date ) {
