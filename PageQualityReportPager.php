@@ -58,7 +58,7 @@ class PageQualityReportPager extends TablePager {
 		}
 		switch ( $name ) {
 			case 'pagename':
-				$formatted = $this->linkRenderer->makeKnownLink( Title::newFromId( $row->page_id ) );
+				$formatted = $this->linkRenderer->makeKnownLink( Title::newFromRow( $row ) );
 				break;
 			case 'timestamp':
 				if ( !empty( $row->timestamp ) ) {
@@ -134,12 +134,20 @@ class PageQualityReportPager extends TablePager {
 
 
 	public function getQueryInfo() {
+		// We also join on the page table, so that deleted pages do not show
+		// While doing that, we get enough fields for Title::newFromRow()
 		$info = [
-			'tables' => [ 'pq_score', 'pq_score_log' ],
-			'fields' => [ 'pq_score.page_id', 'pq_score.score', 'old_score', 'timestamp', 'MAX(timestamp)'],
+			'tables' => [ 'pq_score', 'pq_score_log', 'page' ],
+			'fields' => [
+				'page.page_id', 'page.page_namespace', 'page.page_title',
+				'pq_score.score', 'old_score', 'pq_score_log.timestamp', 'MAX(pq_score_log.timestamp)'
+			],
 			'conds' => [],
-			'join_conds' => [ "pq_score_log" => ["LEFT JOIN", ["pq_score.page_id = pq_score_log.page_id AND pq_score.score = pq_score_log.new_score"] ] ],
-			'options' => ["GROUP BY" => "pq_score.page_id"]
+			'join_conds' => [
+				"pq_score_log" => ['LEFT JOIN', ["pq_score.page_id = pq_score_log.page_id AND pq_score.score = pq_score_log.new_score"] ],
+				'page' => [ 'INNER JOIN', [ 'pq_score.page_id = page.page_id' ] ]
+			],
+			'options' => ['GROUP BY' => "page.page_id"]
 		];
 		if ( \ExtensionRegistry::getInstance()->isLoaded ( 'ArticleContentArea' ) && !empty( $this->opts->getValue( 'article_content_type' ) ) ) {
 			$info = array_merge_recursive( $info, ArticleContentArea::getJoin( $this->opts->getValue( 'article_content_type' ), "pq_score.page_id" ) );
