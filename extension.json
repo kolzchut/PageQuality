@@ -40,7 +40,7 @@
 		"LoadExtensionSchemaUpdates": "PageQualityHooks::onLoadExtensionSchemaUpdate",
 		"BeforePageDisplay": "PageQualityHooks::onBeforePageDisplay",
 		"PageSaveComplete": "PageQualityHooks::onPageSaveComplete"
-    },
+	},
 	"MessagesDirs": {
 		"PageQuality": [
 			"i18n"
@@ -54,9 +54,9 @@
 			"scripts": [
 				"resources/page_quality.js"
 			],
-	        "styles": [
-	                "resources/page_quality.css"
-	        ],
+			"styles": [
+				"resources/page_quality.css"
+			],
 			"dependencies": [
 				"jquery.tablesorter"
 			]
@@ -71,9 +71,9 @@
 			]
 		}
 	},
-    "ResourceFileModulePaths": {
-            "localBasePath": "",
-            "remoteExtPath": "PageQuality"
-    },
-    "manifest_version": 1
+	"ResourceFileModulePaths": {
+		"localBasePath": "",
+		"remoteExtPath": "PageQuality"
+	},
+	"manifest_version": 1
 }

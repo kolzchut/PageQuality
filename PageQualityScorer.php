@@ -1,18 +1,24 @@
 <?php
 
-abstract class PageQualityScorer{
-	const YELLOW = 1;
-	const RED = 2;
+use MediaWiki\Revision\RevisionRecord;
 
-	abstract public function calculatePageScore();
+abstract class PageQualityScorer {
+	public const YELLOW = 1;
+	public const RED = 2;
 
-	public static $registered_classes = [];
-	public static $settings = [];
-	public static $checksList = [];
-	public static $text = null;
-	public static $dom = null;
+	/** @var array */
+	protected static $registered_classes = [];
+	/** @var array */
+	protected static $settings = [];
+	/** @var array */
+	protected static $checksList = [];
+	/** @var string */
+	protected static $text = null;
+	/** @var DOMDocument|null */
+	protected static $dom = null;
 
-	public static $general_settings = [
+	/** @var array */
+	protected static $general_settings = [
 		"red" => [
 			"name" => "pag_scorer_red_score",
 			"default" => 10,
@@ -26,6 +32,11 @@ abstract class PageQualityScorer{
 	];
 
 	/**
+	 * @return mixed
+	 */
+	abstract public function calculatePageScore();
+
+	/**
 	 * This is a naive word counter, which pretty much ignores anything except spaces as word
 	 * delimiters. It should work fine with utf-8 strings.
 	 *
@@ -33,7 +44,7 @@ abstract class PageQualityScorer{
 	 *
 	 * @return int|void
 	 */
-	function str_word_count_utf8( $text ) {
+	protected static function str_word_count_utf8( $text ) {
 		// We do the following because strtr just didn't work right in utf-8 text
 		$replacements = "\n:,[]={}|*,";
 		$replacements = str_split( $replacements );
@@ -52,49 +63,83 @@ abstract class PageQualityScorer{
 		return count( explode( " ", $text ) );
 	}
 
-	public static function getCheckList() {
+	/**
+	 * @return array
+	 */
+	public static function getGeneralSettings(): array {
+		return static::$general_settings;
+	}
+
+	/**
+	 * @return array
+	 */
+	public static function getCheckList(): array {
 		return static::$checksList;
 	}
 
 	public static function loadAllScoreres() {
-		if ( !empty( self::$registered_classes ) ) {
+		if ( !empty( static::$registered_classes ) ) {
 			return;
 		}
-		foreach ( glob( __DIR__ . "/scorers/*.php") as $filename ) {
+		foreach ( glob( __DIR__ . "/scorers/*.php" ) as $filename ) {
 			include_once $filename;
-			self::$registered_classes[] = basename($filename, '.php');
+			self::$registered_classes[] = basename( $filename, '.php' );
 		}
 	}
 
-	public static function getSetting( $type ) {
-		$setting_value = null;
+	/**
+	 * @param string $type
+	 *
+	 * @return array|false|mixed|string[]
+	 */
+	public static function getSetting( string $type ) {
 		if ( array_key_exists( $type, self::getSettingValues() ) ) {
 			$setting_value = self::$settings[$type];
-		} else if ( array_key_exists( $type, self::$general_settings ) ) {
+		} elseif ( array_key_exists( $type, self::$general_settings ) ) {
 			$setting_value = self::$general_settings[$type]['default'];
 		} else {
 			$setting_value = self::getCheckList()[$type]['default'];
 		}
 
 		if ( $setting_value ) {
-			$isList = ( isset( self::getCheckList()[$type][ 'data_type' ] ) && self::getCheckList()[$type][ 'data_type' ] === 'list' ) ||
-			          ( isset( self::$general_settings[$type]['data_type' ] ) && self::$general_settings[$type]['data_type' ] === 'list' );
-
-			if ( $isList ) {
-				$setting_value = preg_split( '/\R/', $setting_value ); // explode by line endings
+			if ( self::isListSetting( $type ) ) {
+				// explode by line endings
+				$setting_value = preg_split( '/\R/', $setting_value );
 			}
 		}
 		return $setting_value;
 	}
 
-	public static function getAllScorers( ) {
+	/**
+	 * @param string $type
+	 *
+	 * @return bool
+	 */
+	protected static function isListSetting( string $type ): bool {
+		return (
+			isset( self::getCheckList()[$type][ 'data_type' ] ) &&
+			self::getCheckList()[$type][ 'data_type' ] === 'list'
+		) ||
+		(
+			isset( self::$general_settings[$type]['data_type' ] ) &&
+			self::$general_settings[$type]['data_type' ] === 'list'
+		);
+	}
+
+	/**
+	 * @return array
+	 */
+	public static function getAllScorers(): array {
 		if ( empty( self::$registered_classes ) ) {
 			self::loadAllScoreres();
 		}
 		return self::$registered_classes;
 	}
 
-	public static function getSettingValues() {
+	/**
+	 * @return array
+	 */
+	public static function getSettingValues(): array {
 		if ( !empty( self::$settings ) ) {
 			return self::$settings;
 		}
@@ -102,35 +147,41 @@ abstract class PageQualityScorer{
 		$res = $dbr->select(
 			'pq_settings',
 			'*',
-			array( true ),
+			[ true ],
 			__METHOD__
 		);
 
-		$all_checklist = PageQualityScorer::getAllChecksList();
+		$all_checklist = self::getAllChecksList();
 		self::$settings = [];
-		foreach( $res as $row ) {
+		foreach ( $res as $row ) {
 			self::$settings[$row->setting] = $row->value;
-			if ( array_key_exists( $row->setting, $all_checklist ) && array_key_exists( 'data_type', $all_checklist[$row->setting] ) && $all_checklist[$row->setting]['data_type'] === 'list' ) {
+			if ( array_key_exists( $row->setting, $all_checklist ) &&
+				 array_key_exists( 'data_type', $all_checklist[$row->setting] ) &&
+				 $all_checklist[$row->setting]['data_type'] === 'list'
+			) {
 				self::$settings[$row->setting] = $row->value_blob ?? null;
 			}
 		}
 		return self::$settings;
 	}
 
-
 	/**
 	 * @param Title $title
 	 *
 	 * @return bool
 	 */
-	public static function isPageScoreable( $title ) {
-		$relevantArticleTypes = PageQualityScorer::getSetting( 'article_types' );
+	public static function isPageScoreable( $title ): bool {
+		$relevantArticleTypes = self::getSetting( 'article_types' );
 		if ( !empty( $relevantArticleTypes ) && ExtensionRegistry::getInstance()->isLoaded( 'ArticleType' ) ) {
 			$articleType = \MediaWiki\Extension\ArticleType\ArticleType::getArticleType( $title );
 			if ( !in_array( $articleType, $relevantArticleTypes ) ) {
 				return false;
 			}
 		}
+		if ( $title->isRedirect() ) {
+			return false;
+		}
+
 		return true;
 	}
 
@@ -139,10 +190,12 @@ abstract class PageQualityScorer{
 	 *
 	 * @return DOMDocument|null
 	 */
-	public static function loadDOM( $text ) {
-		// @todo load only actual page content. right now this will also load stuff like the "protectedpagewarning" message
-		$dom = new DOMDocument('1.0', 'utf-8');
-		// Unicode-compatibility - see https://stackoverflow.com/questions/8218230/php-domdocument-loadhtml-not-encoding-utf-8-correctly
+	public static function loadDOM( string $text ): ?DOMDocument {
+		// @todo load only actual page content. right now this will also load stuff like "protectedpagewarning"
+		$dom = new DOMDocument( '1.0', 'utf-8' );
+
+		// Unicode-compatibility - see:
+		// https://stackoverflow.com/questions/8218230/php-domdocument-loadhtml-not-encoding-utf-8-correctly
 		$dom->loadHTML( '<?xml encoding="utf-8" ?>' . $text );
 		$dom->preserveWhiteSpace = false;
 		self::$dom = $dom;
@@ -155,88 +208,106 @@ abstract class PageQualityScorer{
 	/**
 	 * @return string|null
 	 */
-	protected static function getText() {
+	protected static function getText(): ?string {
 		return self::$text;
 	}
 
 	/**
 	 * @return DOMDocument|null
 	 */
-	protected static function getDOM() {
+	protected static function getDOM(): ?DOMDocument {
 		return self::$dom;
 	}
 
-	public static function getAllChecksList() {
-		PageQualityScorer::loadAllScoreres();
+	/**
+	 * @return array
+	 */
+	public static function getAllChecksList(): array {
+		self::loadAllScoreres();
 		$all_checklist = [];
-		foreach( self::$registered_classes as $scorer_class ) {
+		foreach ( self::$registered_classes as $scorer_class ) {
 			$all_checklist += $scorer_class::getCheckList();
 		}
 		return $all_checklist;
 	}
 
-	public static function getScorForPage( $title ) {
-		PageQualityScorer::loadAllScoreres();
+	/**
+	 * @param Title $title
+	 *
+	 * @return array
+	 */
+	public static function getScorForPage( Title $title ): array {
+		self::loadAllScoreres();
 
 		$dbr = wfGetDB( DB_REPLICA );
 		$res = $dbr->select(
 			'pq_issues',
 			'*',
-			[ 'page_id' => $title->getArticleID()],
+			[ 'page_id' => $title->getArticleID() ],
 			__METHOD__
 		);
 
 		$score = 0;
 		$responses = [];
-		foreach( $res as $row ) {
+		foreach ( $res as $row ) {
 			$responses[$row->pq_type][] = [
 				'example' => $row->example,
 				'score' => $row->score
 			];
 			$score += $row->score;
 		}
-		return [$score, $responses];
+		return [ $score, $responses ];
 	}
 
-	public static function runScorerForPage( $title, $page_html = "", $automated_run = false ) {
+	/**
+	 * @param Title $title
+	 * @param string $page_html
+	 * @param bool $automated_run
+	 *
+	 * @return array
+	 * @throws MWException
+	 */
+	public static function runScorerForPage(
+		Title $title, string $page_html = "", bool $automated_run = false
+	): array {
 		if ( empty( $page_html ) ) {
 			$pageObj = WikiPage::factory( $title );
-			$page_html = $pageObj->getContent( Revision::RAW )->getParserOutput( $title )->getText();
+			$page_html = $pageObj->getContent( RevisionRecord::RAW )->getParserOutput( $title )->getText();
 		}
-		PageQualityScorer::loadAllScoreres();
-		list( $score, $responses ) = PageQualityScorer::runAllScoreres( $page_html );
+		self::loadAllScoreres();
+		list( $score, $responses ) = self::runAllScoreres( $page_html );
 
-		$dbw = wfGetDB( DB_MASTER );
+		$dbw = wfGetDB( DB_PRIMARY );
 		$dbr = wfGetDB( DB_REPLICA );
 		$res = $dbr->select(
 			'pq_issues',
 			'score',
-			[ 'page_id' => $title->getArticleID()],
+			[ 'page_id' => $title->getArticleID() ],
 			__METHOD__
 		);
 		$old_score = 0;
 		if ( $res->numRows() > 0 ) {
-			foreach( $res as $row ) {
+			foreach ( $res as $row ) {
 				$old_score += $row->score;
 			}
 		}
 		$dbw->delete(
 			'pq_score',
-			array( 'page_id' => $title->getArticleID() ),
+			[ 'page_id' => $title->getArticleID() ],
 			__METHOD__
 		);
 		$dbw->delete(
 			'pq_issues',
-			array( 'page_id' => $title->getArticleID() ),
+			[ 'page_id' => $title->getArticleID() ],
 			__METHOD__
 		);
 
 		if ( !self::isPageScoreable( $title ) ) {
-			return [ 0, []];
+			return [ 0, [] ];
 		}
 
-		foreach( $responses as $type => $type_responses ) {
-			foreach( $type_responses as $response ) {
+		foreach ( $responses as $type => $type_responses ) {
+			foreach ( $type_responses as $response ) {
 				$dbw->insert(
 					'pq_issues',
 					[
@@ -246,7 +317,7 @@ abstract class PageQualityScorer{
 						'example' => $response['example']
 					],
 					__METHOD__,
-					array( 'IGNORE' )
+					[ 'IGNORE' ]
 				);
 			}
 		}
@@ -262,7 +333,7 @@ abstract class PageQualityScorer{
 					'timestamp' => $dbw->timestamp()
 				],
 				__METHOD__,
-				array( 'IGNORE' )
+				[ 'IGNORE' ]
 			);
 		}
 		$dbw->insert(
@@ -272,36 +343,47 @@ abstract class PageQualityScorer{
 				'score'   => $score
 			],
 			__METHOD__,
-			array( 'IGNORE' )
+			[ 'IGNORE' ]
 		);
 
-		return [$score, $responses];
+		return [ $score, $responses ];
 	}
 
-	public static function runAllScoreres( $text ) {
+	/**
+	 * @param string $text
+	 *
+	 * @return array
+	 */
+	public static function runAllScoreres( string $text ): array {
 		self::loadDOM( $text );
 		$responses = [];
-		foreach( self::$registered_classes as $scorer_class ) {
+		foreach ( self::$registered_classes as $scorer_class ) {
 			$scorer_obj = new $scorer_class();
 			$responses += $scorer_obj->calculatePageScore();
 		}
 
 		$score = 0;
-		foreach( $responses as $type => $type_responses ) {
-			foreach( $type_responses as $response ) {
+		foreach ( $responses as $type => $type_responses ) {
+			foreach ( $type_responses as $response ) {
 				$score += $response['score'];
 			}
 		}
 		return [ $score, $responses ];
 	}
 
-	protected static function getElementsByClassName( DOMDocument $dom, $className ) {
+	/**
+	 * @param DOMDocument $dom
+	 * @param string $className
+	 *
+	 * @return DOMNodeList|false|mixed
+	 */
+	protected static function getElementsByClassName( DOMDocument $dom, string $className ) {
 		$xpath = new DOMXpath( $dom );
 		$expression = '//*[contains(concat(" ", normalize-space(@class), " "), " ' . $className . ' ")]';
 		return $xpath->query( $expression );
 	}
 
-	protected static function removeIgnoredElements () {
+	protected static function removeIgnoredElements() {
 		$ignoredElements = self::getElementsByClassName( self::getDOM(), 'pagequality-ignore' );
 		foreach ( $ignoredElements as $element ) {
 			$element->parentNode->removeChild( $element );

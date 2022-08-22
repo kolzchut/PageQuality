@@ -1,7 +1,8 @@
 <?php
 
-class PageQualityScorerTableRules extends PageQualityScorer{
+class PageQualityScorerTableRules extends PageQualityScorer {
 
+	/** @inheritdoc */
 	public static $checksList = [
 		"table_columns" => [
 			"name" => "pag_scorer_table_columns",
@@ -19,18 +20,20 @@ class PageQualityScorerTableRules extends PageQualityScorer{
 		],
 	];
 
-
+	/**
+	 * @inheritDoc
+	 */
 	public function calculatePageScore() {
 		$response = [];
 
-		$tableNodes = self::getDOM()->getElementsByTagName('table');
-	    for ($i = 0; $i < $tableNodes->length; $i++) {
-	    	$row_count = 0;
-	    	$column_count = 0;
-	    	foreach( $tableNodes->item($i)->getElementsByTagName('tr') as $tr_node ) {
-	    		$row_count++;
-	    		$column_count = max( $tr_node->getElementsByTagName('td')->length, $column_count );
-	    	}
+		$tableNodes = self::getDOM()->getElementsByTagName( 'table' );
+		for ( $i = 0; $i < $tableNodes->length; $i++ ) {
+			$row_count = 0;
+			$column_count = 0;
+			foreach ( $tableNodes->item( $i )->getElementsByTagName( 'tr' ) as $tr_node ) {
+				$row_count++;
+				$column_count = max( $tr_node->getElementsByTagName( 'td' )->length, $column_count );
+			}
 			if ( $column_count > self::getSetting( "table_columns" ) ) {
 				$response['table_columns'][] = [
 					"score" => self::getCheckList()['table_columns']['severity'],
@@ -43,7 +46,7 @@ class PageQualityScorerTableRules extends PageQualityScorer{
 					"example" => wfMessage( "pq_occurance_table_rows", $row_count )
 				];
 			}
-	    }
+		}
 		return $response;
 	}
 }

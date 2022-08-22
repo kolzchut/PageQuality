@@ -1,18 +1,27 @@
 <?php
 
-use MediaWiki\Linker\LinkRenderer;
-use MediaWiki\MediaWikiServices;
 use MediaWiki\Extension\ArticleContentArea\ArticleContentArea;
 use MediaWiki\Extension\ArticleType\ArticleType;
+use MediaWiki\Linker\LinkRenderer;
 
 class PageQualityReportPager extends TablePager {
 
 	/** @var LinkRenderer */
-	private $linkRenderer;
-	private $report_type;
-	private $opts;
+	private LinkRenderer $linkRenderer;
+	/** @var string */
+	private string $report_type;
+	/** @var FormOptions */
+	private FormOptions $opts;
 
-	public function __construct( IContextSource $context, LinkRenderer $linkRenderer, FormOptions $opts, $report_type ) {
+	/**
+	 * @param IContextSource $context
+	 * @param LinkRenderer $linkRenderer
+	 * @param FormOptions $opts
+	 * @param string $report_type
+	 */
+	public function __construct(
+		IContextSource $context, LinkRenderer $linkRenderer, FormOptions $opts, string $report_type
+	) {
 		parent::__construct( $context );
 
 		$this->opts = $opts;
@@ -20,6 +29,9 @@ class PageQualityReportPager extends TablePager {
 		$this->linkRenderer = $linkRenderer;
 	}
 
+	/**
+	 * @inheritDoc
+	 */
 	public function getFieldNames() {
 		static $headers = null;
 
@@ -35,7 +47,7 @@ class PageQualityReportPager extends TablePager {
 		];
 		$headers["timestamp"] = "pq_report_page_score_timestamp";
 
-		foreach( $all_checklist as $type => $type_data ) {
+		foreach ( $all_checklist as $type => $type_data ) {
 			$headers[$type] = $type_data['name'];
 		}
 		foreach ( $headers as &$msg ) {
@@ -45,10 +57,32 @@ class PageQualityReportPager extends TablePager {
 		return $headers;
 	}
 
+	/**
+	 * It seems we totally ignore this function and use formatValueMy() in formatRow().
+	 * That seems wrong, but what do I know.
+	 * This function must still be implemented, even empty.
+	 *
+	 * @todo clean up this mess
+	 *
+	 * @inheritDoc
+	 */
 	public function formatValue( $name, $value ) {
 	}
 
-	public function formatValueMy( $name, $value, $page_stats ) {
+	/**
+	 * Format a table cell. The return value should be HTML, but use an empty
+	 * string not &#160; for empty cells. Do not include the <td> and </td>.
+	 *
+	 * The current result row is available as $this->mCurrentRow, in case you
+	 * need more context.
+	 *
+	 * @param string $name The database field name
+	 * @param string $value The value retrieved from the database
+	 * @param array|null $page_stats
+	 *
+	 * @return string|null
+	 */
+	public function formatValueMy( string $name, string $value, ?array $page_stats ): ?string {
 		$formatted = "";
 
 		$row = $this->mCurrentRow;
@@ -62,7 +96,8 @@ class PageQualityReportPager extends TablePager {
 				break;
 			case 'timestamp':
 				if ( !empty( $row->timestamp ) ) {
-					$formatted = (new DateTime())->setTimestamp( wfTimestamp( TS_UNIX, $row->timestamp ) )->format( 'j M y' );
+					$formatted = ( new DateTime() )->setTimestamp( wfTimestamp( TS_UNIX, $row->timestamp ) )
+												   ->format( 'j M y' );
 				}
 				break;
 			case 'score':
@@ -79,7 +114,9 @@ class PageQualityReportPager extends TablePager {
 			// 	$formatted = $row->score_old;
 			// 	break;
 			case 'status':
-				$status = $row->score > PageQualityScorer::getSetting( "red" ) ? "red" : ( $row->score > 0 ? "yellow" : "green" );
+				$status = $row->score > PageQualityScorer::getSetting( "red" )
+					? "red"
+					: ( $row->score > 0 ? "yellow" : "green" );
 				$formatted = $this->msg( 'pq_report_page_status_' . $status )->escaped();
 				break;
 			default:
@@ -89,26 +126,28 @@ class PageQualityReportPager extends TablePager {
 		return $formatted;
 	}
 
-
-    /**
-     * @stable to override
-     * @param stdClass $row
-     * @return string HTML
-     */
-    public function formatRow( $row ) {
-            $this->mCurrentRow = $row; // In case formatValue etc need to know
-            $s = Html::openElement( 'tr', $this->getRowAttrs( $row ) ) . "\n";
-            $fieldNames = $this->getFieldNames();
+	/**
+	 * @stable to override
+	 * @param stdClass $row
+	 * @return string HTML
+	 *
+	 * @todo This is horrible! it does one DB query *per row*,, intead of selecting them all at once
+	 */
+	public function formatRow( $row ) {
+			// Save the row, in case formatValue etc. need to know
+			$this->mCurrentRow = $row;
+			$s = Html::openElement( 'tr', $this->getRowAttrs( $row ) ) . "\n";
+			$fieldNames = $this->getFieldNames();
 
 			$dbr = wfGetDB( DB_REPLICA );
 			$res = $dbr->select(
 				"pq_issues",
 				'*',
-				['page_id' => $row->page_id],
+				[ 'page_id' => $row->page_id ],
 				__METHOD__
 			);
 			$page_stats = [];
-			foreach( $res as $issue_row ) {
+			foreach ( $res as $issue_row ) {
 				$type = $issue_row->pq_type;
 				if ( !array_key_exists( $type, $page_stats ) ) {
 					$page_stats[$type] = 0;
@@ -116,24 +155,26 @@ class PageQualityReportPager extends TablePager {
 				$page_stats[$type]++;
 			}
 
-            foreach ( $fieldNames as $field => $name ) {
-                    $value = $row->$field ?? null;
-                    $formatted = strval( $this->formatValueMy( $field, $value, $page_stats ) );
+			foreach ( $fieldNames as $field => $name ) {
+					$value = $row->$field ?? null;
+					$formatted = strval( $this->formatValueMy( $field, $value, $page_stats ) );
 
-                    if ( $formatted == '' ) {
-                            $formatted = "\u{00A0}";
-                    }
+					if ( $formatted == '' ) {
+							$formatted = "\u{00A0}";
+					}
 
-                    $s .= Html::rawElement( 'td', $this->getCellAttrs( $field, $value ), $formatted ) . "\n";
-            }
+					$s .= Html::rawElement( 'td', $this->getCellAttrs( $field, $value ), $formatted ) . "\n";
+			}
 
-            $s .= Html::closeElement( 'tr' ) . "\n";
+			$s .= Html::closeElement( 'tr' ) . "\n";
 
-            return $s;
-    }
+			return $s;
+	}
 
-
-	public function getQueryInfo() {
+	/**
+	 * @inheritDoc
+	 */
+	public function getQueryInfo(): array {
 		// We also join on the page table, so that deleted pages do not show
 		// While doing that, we get enough fields for Title::newFromRow()
 		$info = [
@@ -144,75 +185,116 @@ class PageQualityReportPager extends TablePager {
 			],
 			'conds' => [],
 			'join_conds' => [
-				"pq_score_log" => ['LEFT JOIN', ["pq_score.page_id = pq_score_log.page_id AND pq_score.score = pq_score_log.new_score"] ],
+				"pq_score_log" => [
+					'LEFT JOIN',
+					[ "pq_score.page_id = pq_score_log.page_id AND pq_score.score = pq_score_log.new_score" ]
+				],
 				'page' => [ 'INNER JOIN', [ 'pq_score.page_id = page.page_id' ] ]
 			],
-			'options' => ['GROUP BY' => "page.page_id"]
+			'options' => [ 'GROUP BY' => "page.page_id" ]
 		];
-		if ( \ExtensionRegistry::getInstance()->isLoaded ( 'ArticleContentArea' ) && !empty( $this->opts->getValue( 'article_content_type' ) ) ) {
-			$info = array_merge_recursive( $info, ArticleContentArea::getJoin( $this->opts->getValue( 'article_content_type' ), "pq_score.page_id" ) );
+		if ( \ExtensionRegistry::getInstance()->isLoaded( 'ArticleContentArea' ) &&
+			 !empty( $this->opts->getValue( 'article_content_type' ) )
+		) {
+			$info = array_merge_recursive(
+				$info,
+				ArticleContentArea::getJoin( $this->opts->getValue( 'article_content_type' ), "pq_score.page_id" )
+			);
 		}
-		if ( \ExtensionRegistry::getInstance()->isLoaded ( 'ArticleType' ) && !empty( $this->opts->getValue( 'article_type' ) ) ) {
-			$info = array_merge_recursive( $info, ArticleType::getJoin( $this->opts->getValue( 'article_type' ), "pq_score.page_id" ) );
+		if ( \ExtensionRegistry::getInstance()->isLoaded( 'ArticleType' ) &&
+			 !empty( $this->opts->getValue( 'article_type' ) )
+		) {
+			$info = array_merge_recursive(
+				$info, ArticleType::getJoin( $this->opts->getValue( 'article_type' ), "pq_score.page_id" )
+			);
 		}
 
 		$from_ts = 0;
 		$to_ts = wfTimestamp();
 		if ( !empty( $this->opts->getValue( 'from_date' ) ) ) {
-			$from_ts = wfTimestamp( TS_MW, DateTime::createFromFormat( 'Y-m-d', $this->opts->getValue('from_date') )->setTime(0, 0)->getTimestamp() );
-			$info['conds'][] = "timestamp > " . $from_ts;
+			$startOfDay = DateTime::createFromFormat( 'Y-m-d', $this->opts->getValue( 'from_date' ) )
+								  ->setTime( 0, 0 )->getTimestamp();
+			$info['conds'][] = 'timestamp > ' . wfTimestamp( TS_MW, $startOfDay );
 		}
 		if ( !empty( $this->opts->getValue( 'to_date' ) ) ) {
-			$to_ts = wfTimestamp( TS_MW, DateTime::createFromFormat( 'Y-m-d', $this->opts->getValue('to_date') )->setTime(0, 0)->modify( '+1 days' )->getTimestamp() );
-			$info['conds'][] = "timestamp < " . $to_ts;
+			$startOfNextDay = DateTime::createFromFormat( 'Y-m-d', $this->opts->getValue( 'to_date' ) )
+								->setTime( 0, 0 )->modify( '+1 days' );
+			$to_ts = wfTimestamp( TS_MW, $startOfNextDay );
+			$info['conds'][] = 'timestamp < ' . wfTimestamp( TS_MW, $startOfNextDay );
 		}
+
+		$redScoreSetting = PageQualityScorer::getSetting( "red" );
 
 		switch ( $this->report_type ) {
 			case "all":
 				$info['conds'][] = "score > 1";
 				break;
 			case "red_all":
-				$info['conds'][] = "score > " . PageQualityScorer::getSetting( "red" );
+				$info['conds'][] = "score > $redScoreSetting";
 				break;
 			case "yellow_all":
 				$info['conds'][] = "score > 0";
-				$info['conds'][] = "score <= " . PageQualityScorer::getSetting( "red" );
+				$info['conds'][] = "score <= $redScoreSetting";
 				break;
 			case "declines":
 				$info = [
 					'tables' => [ 'pq_score_log AS pq_a', 'pq_score_log AS pq_b' ],
-					'fields' => [ 'pq_a.page_id as page_id', 'pq_a.new_score AS score', 'pq_a.timestamp as timestamp', 'pq_b.old_score AS old_score', 'pq_b.timestamp as pq_bts'],
-					'conds' => [ "pq_a.timestamp > $from_ts AND pq_a.timestamp < $to_ts", "pq_b.timestamp > $from_ts AND pq_b.timestamp < $to_ts", "pq_a.page_id = pq_b.page_id" ],
-					'join_conds' => [ "pq_a" => ["LEFT JOIN", ["pq_a.page_id=pq_b.page_id"] ] ],
-					'options' => [ 'ORDER BY' => 'timestamp ASC, pq_bts DESC', 'GROUP BY' => 'pq_a.page_id', 'HAVING' => 'score > '. PageQualityScorer::getSetting( "red" ) .' AND old_score < ' . PageQualityScorer::getSetting( "red" ) ]
+					'fields' => [
+						'pq_a.page_id as page_id', 'pq_a.new_score AS score', 'pq_a.timestamp as timestamp',
+						'pq_b.old_score AS old_score', 'pq_b.timestamp as pq_bts'
+					],
+					'conds' => [
+						"pq_a.timestamp > $from_ts AND pq_a.timestamp < $to_ts",
+						"pq_b.timestamp > $from_ts AND pq_b.timestamp < $to_ts",
+						"pq_a.page_id = pq_b.page_id"
+					],
+					'join_conds' => [ "pq_a" => [ "LEFT JOIN", [ "pq_a.page_id=pq_b.page_id" ] ] ],
+					'options' => [
+						'ORDER BY' => 'timestamp ASC, pq_bts DESC',
+						'GROUP BY' => 'pq_a.page_id',
+						'HAVING' => "score > $redScoreSetting AND old_score < $redScoreSetting"
+					]
 				];
 				break;
 			case "improvements":
 				$info = [
 					'tables' => [ 'pq_score_log AS pq_a', 'pq_score_log AS pq_b' ],
-					'fields' => [ 'pq_a.page_id as page_id', 'pq_a.new_score AS score', 'pq_a.timestamp as timestamp', 'pq_b.old_score AS old_score', 'pq_b.timestamp as pq_bts'],
-					'conds' => [ "pq_a.timestamp > $from_ts AND pq_a.timestamp < $to_ts", "pq_b.timestamp > $from_ts AND pq_b.timestamp < $to_ts", "pq_a.page_id = pq_b.page_id" ],
-					'join_conds' => [ "pq_a" => ["LEFT JOIN", ["pq_a.page_id=pq_b.page_id"] ] ],
-					'options' => [ 'ORDER BY' => 'timestamp ASC, pq_bts DESC', 'GROUP BY' => 'pq_a.page_id', 'HAVING' => 'score < '. PageQualityScorer::getSetting( "red" ) .' AND old_score > ' . PageQualityScorer::getSetting( "red" ) ]
+					'fields' => [
+						'pq_a.page_id as page_id', 'pq_a.new_score AS score', 'pq_a.timestamp as timestamp',
+						'pq_b.old_score AS old_score', 'pq_b.timestamp as pq_bts'
+					],
+					'conds' => [
+						"pq_a.timestamp > $from_ts AND pq_a.timestamp < $to_ts",
+						"pq_b.timestamp > $from_ts AND pq_b.timestamp < $to_ts",
+						"pq_a.page_id = pq_b.page_id"
+					],
+					'join_conds' => [ "pq_a" => [ "LEFT JOIN", [ "pq_a.page_id=pq_b.page_id" ] ] ],
+					'options' => [
+						'ORDER BY' => 'timestamp ASC, pq_bts DESC',
+						'GROUP BY' => 'pq_a.page_id',
+						'HAVING' => "score < $redScoreSetting AND old_score > $redScoreSetting"
+					]
 				];
 				break;
 			default:
 				$info['tables'][] = 'pq_issues';
 				$info['conds']['pq_type'] = $this->report_type;
-				$info['join_conds']["pq_issues"] = ["LEFT JOIN", ["pq_score.page_id=pq_issues.page_id"] ];
+				$info['join_conds']["pq_issues"] = [ "LEFT JOIN", [ "pq_score.page_id=pq_issues.page_id" ] ];
 		}
 		return $info;
 	}
 
-	public function getDefaultSort() {
+	/**
+	 * @inheritDoc
+	 */
+	public function getDefaultSort(): string {
 		return 'page_id';
 	}
 
-	public function isFieldSortable( $name ) {
-		$sortable = false;
-		if ( in_array( $name, [ 'score', 'old_score', 'timestamp' ] ) ) {
-			$sortable = true;
-		}
-		return $sortable;
+	/**
+	 * @inheritDoc
+	 */
+	public function isFieldSortable( $field ): bool {
+		return in_array( $field, [ 'score', 'old_score', 'timestamp' ] );
 	}
 }

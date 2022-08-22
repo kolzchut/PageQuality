@@ -1,7 +1,8 @@
 <?php
 
-class PageQualityScorerEmphasisRules extends PageQualityScorer{
+class PageQualityScorerEmphasisRules extends PageQualityScorer {
 
+	/** @inheritdoc */
 	public static $checksList = [
 		"emphasis_lines_min" => [
 			"name" => "pag_scorer_emphasis_lines_min",
@@ -39,39 +40,41 @@ class PageQualityScorerEmphasisRules extends PageQualityScorer{
 		]
 	];
 
-
+	/**
+	 * @inheritDoc
+	 */
 	public function calculatePageScore() {
 		$response = [];
 		$count = 0;
 		$emphasis_gov = false;
-		$divNodes = self::getDOM()->getElementsByTagName('div');
-	    for ($i = 0; $i < $divNodes->length; $i++) {
-	        if ( stripos($divNodes->item($i)->getAttribute('class'), "emphasis-item") !== false
-	        	&&
-	        	stripos($divNodes->item($i)->getAttribute('class'), "emphasis-item-icon") === false
-	        	&&
-	        	stripos($divNodes->item($i)->getAttribute('class'), "emphasis-item-text") === false
-	   		) {
-	        	$count++;
-				$wc = self::str_word_count_utf8( $divNodes->item($i)->nodeValue );
+		$divNodes = self::getDOM()->getElementsByTagName( 'div' );
+		for ( $i = 0; $i < $divNodes->length; $i++ ) {
+			if ( stripos( $divNodes->item( $i )->getAttribute( 'class' ), "emphasis-item" ) !== false
+				&&
+				stripos( $divNodes->item( $i )->getAttribute( 'class' ), "emphasis-item-icon" ) === false
+				&&
+				stripos( $divNodes->item( $i )->getAttribute( 'class' ), "emphasis-item-text" ) === false
+			) {
+				$count++;
+				$wc = self::str_word_count_utf8( $divNodes->item( $i )->nodeValue );
 				if ( $wc > self::getSetting( "emphasis_line_length" ) ) {
 					$response['emphasis_line_length'][] = [
 						"score" => self::getCheckList()['emphasis_line_length']['severity'],
-						"example" => mb_substr( $divNodes->item($i)->nodeValue, 0, 50)
+						"example" => mb_substr( $divNodes->item( $i )->nodeValue, 0, 50 )
 					];
-				} else if ( $wc > self::getSetting( "emphasis_line_length_min" ) ) {
+				} elseif ( $wc > self::getSetting( "emphasis_line_length_min" ) ) {
 					$response['emphasis_line_length_min'][] = [
 						"score" => self::getCheckList()['emphasis_line_length_min']['severity'],
-						"example" => mb_substr( $divNodes->item($i)->nodeValue, 0, 50)
+						"example" => mb_substr( $divNodes->item( $i )->nodeValue, 0, 50 )
 					];
 				}
-		        if ( strpos( $divNodes->item($i)->getAttribute('class'), "emphasis-type-government" ) !== false ) {
+				if ( strpos( $divNodes->item( $i )->getAttribute( 'class' ), "emphasis-type-government" ) !== false ) {
 					$emphasis_gov = true;
-		        } else {
+				} else {
 					$emphasis_gov = false;
-		        }
-	        }
-	    }
+				}
+			}
+		}
 
 		if ( $count < self::getSetting( "emphasis_lines_min" ) ) {
 			$response['emphasis_lines_min'][] = [

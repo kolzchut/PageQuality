@@ -29,23 +29,9 @@ if ( getenv( 'MW_INSTALL_PATH' ) ) {
 	require_once __DIR__ . '/../../../maintenance/Maintenance.php';
 }
 
-$maintClass = recreateAllScores::class;
+$maintClass = RecreateAllScores::class;
 
-class recreateAllScores extends Maintenance {
-
-	/**
-	 * A database replica DB object
-	 *
-	 * @var object
-	 */
-	public $dbr;
-
-	/**
-	 * List of article types to work on
-	 *
-	 * @var array
-	 */
-	public $articleType;
+class RecreateAllScores extends Maintenance {
 
 	public function __construct() {
 		parent::__construct();
@@ -117,6 +103,9 @@ class recreateAllScores extends Maintenance {
 		$this->output( "\nDone.\n" );
 	}
 
+	/**
+	 * @return array
+	 */
 	private function getBasicQuery() {
 		$dbr = $this->getDB( DB_REPLICA );
 
@@ -131,7 +120,7 @@ class recreateAllScores extends Maintenance {
 
 		// Handle namespaces
 		if ( $this->hasOption( 'namespace' ) && !defined( $this->getOption( 'namespace' ) ) ) {
-			$this->fatalError( "Expected a namespace constant, `". $this->getOption( 'namespace' ) . "` is unknown!" );
+			$this->fatalError( "Expected a namespace constant, `" . $this->getOption( 'namespace' ) . "` is unknown!" );
 		}
 		$namespace = $this->getOption( 'namespace' );
 		if ( $namespace ) {
@@ -146,6 +135,5 @@ class recreateAllScores extends Maintenance {
 		return $query;
 	}
 }
-
 
 require_once RUN_MAINTENANCE_IF_MAIN;
