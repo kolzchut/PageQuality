@@ -3,7 +3,7 @@
 	"author": "Nischayn22, WikiWorks",
 	"url": "https://www.mediawiki.org/wiki/Extension:PageQuality",
 	"description": "Monitor and improve page quality",
-	"version": "0.1",
+	"version": "0.2",
 	"license-name": "GPL-2.0-or-later",
 	"type": "Special Page",
 	"AutoloadClasses": {
