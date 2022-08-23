@@ -60,10 +60,9 @@ class MigrateTimestampToMWFormat extends LoggedUpdateMaintenance {
 					[ 'timestamp2' => wfTimestamp( TS_MW, $row->timestamp ) ],
 					[ 'id' => $row->id ]
 				);
+
+				$processed += $dbw->affectedRows();
 			}
-
-			$processed += $dbw->affectedRows();
-
 		}
 
 		$this->output( "Processed $processed PageQuality log records\n" );
