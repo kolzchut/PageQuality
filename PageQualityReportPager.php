@@ -77,12 +77,12 @@ class PageQualityReportPager extends TablePager {
 	 * need more context.
 	 *
 	 * @param string $name The database field name
-	 * @param string $value The value retrieved from the database
+	 * @param string|null $value The value retrieved from the database
 	 * @param array|null $page_stats
 	 *
 	 * @return string|null
 	 */
-	public function formatValueMy( string $name, string $value, ?array $page_stats ): ?string {
+	public function formatValueMy( string $name, ?string $value, ?array $page_stats ): ?string {
 		$formatted = "";
 
 		$row = $this->mCurrentRow;
