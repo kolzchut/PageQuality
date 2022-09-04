@@ -171,6 +171,9 @@ abstract class PageQualityScorer {
 	 * @return bool
 	 */
 	public static function isPageScoreable( $title ): bool {
+		if ( $title->isSpecialPage() ) {
+			return false;
+		}
 		$relevantArticleTypes = self::getSetting( 'article_types' );
 		if ( !empty( $relevantArticleTypes ) && ExtensionRegistry::getInstance()->isLoaded( 'ArticleType' ) ) {
 			$articleType = \MediaWiki\Extension\ArticleType\ArticleType::getArticleType( $title );
