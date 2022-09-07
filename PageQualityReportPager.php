@@ -22,10 +22,11 @@ class PageQualityReportPager extends TablePager {
 	public function __construct(
 		IContextSource $context, LinkRenderer $linkRenderer, FormOptions $opts, string $report_type
 	) {
+		$this->report_type = $report_type;
+
 		parent::__construct( $context );
 
 		$this->opts = $opts;
-		$this->report_type = $report_type;
 		$this->linkRenderer = $linkRenderer;
 	}
 
@@ -173,8 +174,12 @@ class PageQualityReportPager extends TablePager {
 
 	/**
 	 * @inheritDoc
+	 * @throws Exception
 	 */
 	public function getQueryInfo(): array {
+		$from_date = $this->opts->getValue( 'from_date' );
+		$to_date = $this->opts->getValue( 'to_date' );
+
 		// We also join on the page table, so that deleted pages do not show
 		// While doing that, we get enough fields for Title::newFromRow()
 		$info = [
@@ -183,45 +188,16 @@ class PageQualityReportPager extends TablePager {
 				'page.page_id', 'page.page_namespace', 'page.page_title',
 				'pq_score.score', 'old_score', 'pq_score_log.timestamp', 'MAX(pq_score_log.timestamp)'
 			],
-			'conds' => [],
+			'conds' => $this->getConditionLimitByDates( 'timestamp', $from_date, $to_date ),
 			'join_conds' => [
 				"pq_score_log" => [
 					'LEFT JOIN',
-					[ "pq_score.page_id = pq_score_log.page_id AND pq_score.score = pq_score_log.new_score" ]
+					[ 'pq_score.page_id = pq_score_log.page_id', 'pq_score.score = pq_score_log.new_score' ]
 				],
 				'page' => [ 'INNER JOIN', [ 'pq_score.page_id = page.page_id' ] ]
 			],
 			'options' => [ 'GROUP BY' => "page.page_id" ]
 		];
-		if ( \ExtensionRegistry::getInstance()->isLoaded( 'ArticleContentArea' ) &&
-			 !empty( $this->opts->getValue( 'article_content_type' ) )
-		) {
-			$info = array_merge_recursive(
-				$info,
-				ArticleContentArea::getJoin( $this->opts->getValue( 'article_content_type' ), "pq_score.page_id" )
-			);
-		}
-		if ( \ExtensionRegistry::getInstance()->isLoaded( 'ArticleType' ) &&
-			 !empty( $this->opts->getValue( 'article_type' ) )
-		) {
-			$info = array_merge_recursive(
-				$info, ArticleType::getJoin( $this->opts->getValue( 'article_type' ), "pq_score.page_id" )
-			);
-		}
-
-		$from_ts = 0;
-		$to_ts = wfTimestamp();
-		if ( !empty( $this->opts->getValue( 'from_date' ) ) ) {
-			$startOfDay = DateTime::createFromFormat( 'Y-m-d', $this->opts->getValue( 'from_date' ) )
-								  ->setTime( 0, 0 )->getTimestamp();
-			$info['conds'][] = 'timestamp > ' . wfTimestamp( TS_MW, $startOfDay );
-		}
-		if ( !empty( $this->opts->getValue( 'to_date' ) ) ) {
-			$startOfNextDay = DateTime::createFromFormat( 'Y-m-d', $this->opts->getValue( 'to_date' ) )
-								->setTime( 0, 0 )->modify( '+1 days' );
-			$to_ts = wfTimestamp( TS_MW, $startOfNextDay );
-			$info['conds'][] = 'timestamp < ' . wfTimestamp( TS_MW, $startOfNextDay );
-		}
 
 		$redScoreSetting = PageQualityScorer::getSetting( "red" );
 
@@ -237,58 +213,110 @@ class PageQualityReportPager extends TablePager {
 				$info['conds'][] = "score <= $redScoreSetting";
 				break;
 			case "declines":
-				$info = [
-					'tables' => [ 'pq_score_log AS pq_a', 'pq_score_log AS pq_b' ],
-					'fields' => [
-						'pq_a.page_id as page_id', 'pq_a.new_score AS score', 'pq_a.timestamp as timestamp',
-						'pq_b.old_score AS old_score', 'pq_b.timestamp as pq_bts'
-					],
-					'conds' => [
-						"pq_a.timestamp > $from_ts AND pq_a.timestamp < $to_ts",
-						"pq_b.timestamp > $from_ts AND pq_b.timestamp < $to_ts",
-						"pq_a.page_id = pq_b.page_id"
-					],
-					'join_conds' => [ "pq_a" => [ "LEFT JOIN", [ "pq_a.page_id=pq_b.page_id" ] ] ],
-					'options' => [
-						'ORDER BY' => 'timestamp ASC, pq_bts DESC',
-						'GROUP BY' => 'pq_a.page_id',
-						'HAVING' => "score > $redScoreSetting AND old_score < $redScoreSetting"
-					]
-				];
+				$info = $this->getScoreLogQuery( $from_date, $to_date );
+				$info['options']['HAVING'] = "score > $redScoreSetting AND old_score < $redScoreSetting";
 				break;
 			case "improvements":
-				$info = [
-					'tables' => [ 'pq_score_log AS pq_a', 'pq_score_log AS pq_b' ],
-					'fields' => [
-						'pq_a.page_id as page_id', 'pq_a.new_score AS score', 'pq_a.timestamp as timestamp',
-						'pq_b.old_score AS old_score', 'pq_b.timestamp as pq_bts'
-					],
-					'conds' => [
-						"pq_a.timestamp > $from_ts AND pq_a.timestamp < $to_ts",
-						"pq_b.timestamp > $from_ts AND pq_b.timestamp < $to_ts",
-						"pq_a.page_id = pq_b.page_id"
-					],
-					'join_conds' => [ "pq_a" => [ "LEFT JOIN", [ "pq_a.page_id=pq_b.page_id" ] ] ],
-					'options' => [
-						'ORDER BY' => 'timestamp ASC, pq_bts DESC',
-						'GROUP BY' => 'pq_a.page_id',
-						'HAVING' => "score < $redScoreSetting AND old_score > $redScoreSetting"
-					]
-				];
+				$info = $this->getScoreLogQuery( $from_date, $to_date );
+				$info['options']['HAVING'] = "score < $redScoreSetting AND old_score > $redScoreSetting";
 				break;
 			default:
 				$info['tables'][] = 'pq_issues';
 				$info['conds']['pq_type'] = $this->report_type;
-				$info['join_conds']["pq_issues"] = [ "LEFT JOIN", [ "pq_score.page_id=pq_issues.page_id" ] ];
+				$info['join_conds']['pq_issues'] = [ 'LEFT JOIN', 'pq_score.page_id = pq_issues.page_id' ];
 		}
+
+		if ( \ExtensionRegistry::getInstance()->isLoaded( 'ArticleContentArea' ) &&
+			 !empty( $this->opts->getValue( 'article_content_type' ) )
+		) {
+			$info = array_merge_recursive(
+				$info,
+				ArticleContentArea::getJoin( $this->opts->getValue( 'article_content_type' ), 'page.page_id' )
+			);
+		}
+		if ( \ExtensionRegistry::getInstance()->isLoaded( 'ArticleType' ) &&
+			 !empty( $this->opts->getValue( 'article_type' ) )
+		) {
+			$info = array_merge_recursive(
+				$info, ArticleType::getJoin( $this->opts->getValue( 'article_type' ), 'page.page_id' )
+			);
+		}
+
 		return $info;
+	}
+
+	/**
+	 * @param string|null $from_date
+	 * @param string|null $to_date
+	 *
+	 * @return array
+	 * @throws Exception
+	 */
+	protected function getScoreLogQuery( ?string $from_date = null, ?string $to_date = null ): array {
+		$info = [
+			'tables' => [ 'log1' => 'pq_score_log', 'log2' => 'pq_score_log', 'page' ],
+			'fields' => [
+				'page.page_id', 'page.page_namespace', 'page.page_title',
+				'score' => 'log1.new_score', 'timestamp' => 'log1.timestamp',
+				'old_score' => 'log2.old_score', 'log2.timestamp'
+			],
+			'join_conds' => [
+				'log2' => [ 'LEFT JOIN', 'log1.page_id = log2.page_id' ],
+				'page' => [ 'INNER JOIN', 'log1.page_id = page.page_id' ]
+			],
+			'options' => [
+				'ORDER BY' => [ 'timestamp ASC', 'log2.timestamp DESC' ],
+				'GROUP BY' => 'page.page_id',
+			]
+		];
+
+		$dateConditions = array_merge(
+			$this->getConditionLimitByDates( 'log1.timestamp', $from_date, $to_date ),
+			$this->getConditionLimitByDates( 'log2.timestamp', $from_date, $to_date )
+		);
+		$info['conds'] = array_merge( $info['conds'], $dateConditions );
+
+		return $info;
+	}
+
+	/**
+	 * @param string $fieldName
+	 * @param DateTime|string|null $from
+	 * @param DateTime|string|null $to
+	 *
+	 * @return array
+	 *
+	 * @throws Exception
+	 */
+	protected function getConditionLimitByDates( string $fieldName, $from = null, $to = null ): array {
+		$db = $this->getDatabase();
+		$conds = [];
+		if ( !empty( $from ) ) {
+			$conds[] = $fieldName . ' >= ' . $db->addQuotes( $db->timestamp( new DateTime( $from ) ) );
+		}
+		if ( !empty( $to ) ) {
+			// Add 1 day, so we check for "any date before tomorrow"
+			$to = $db->timestamp( new DateTime( $to . ' +1 day' ) );
+			$conds[] = $fieldName . ' < ' . $db->addQuotes( $to );
+		}
+
+		return $conds;
+	}
+
+	/** @inheritDoc */
+	public function getIndexField() {
+		if ( in_array( $this->report_type, [ 'declines', 'improvements' ] ) ) {
+			return [ 'time' => [ 'log1.timestamp ASC', 'log2.timestamp DESC' ] ];
+		}
+
+		return 'timestamp';
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	public function getDefaultSort(): string {
-		return 'page_id';
+		return '';
 	}
 
 	/**
