@@ -128,6 +128,8 @@ class SpecialPageQuality extends SpecialPage {
 		$dbw = wfGetDB( DB_PRIMARY );
 		$dbr = wfGetDB( DB_REPLICA );
 
+		// @todo Save settings only if they changed ("dirty state")
+		// @todo Delete saved settings if they're reset to their default setting
 		if ( $this->getRequest()->getVal( 'save' ) == 1 ) {
 			foreach ( PageQualityScorer::getAllScorers() as $scorer_class ) {
 				$all_checklist = $scorer_class::getCheckList();
@@ -151,7 +153,8 @@ class SpecialPageQuality extends SpecialPage {
 				}
 			}
 			foreach ( PageQualityScorer::getGeneralSettings() as $type => $data ) {
-				if ( $this->getRequest()->getVal( $type ) ) {
+				$savedValue = $this->getRequest()->getVal( $type );
+				if ( $savedValue !== null ) {
 					$value_field = "value";
 					if ( array_key_exists( 'data_type', $check ) && $check['data_type'] == "list" ) {
 						$value_field = "value_blob";
@@ -445,7 +448,7 @@ class SpecialPageQuality extends SpecialPage {
 			],
 			__METHOD__,
 			[ 'ORDER BY' => 'pq_ats ASC, pq_bts DESC', 'GROUP BY' => 'pq_a.page_id' ],
-			[ "pq_b" => [ "INNER JOIN", [ "pq_a.page_id=pq_b.page_id" ] ] ]
+			[ 'pq_b' => [ 'INNER JOIN', 'pq_a.page_id = pq_b.page_id' ] ]
 		);
 
 		// We might have multiple entries for the same page within the selected time frame, the
