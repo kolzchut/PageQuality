@@ -325,7 +325,7 @@ abstract class PageQualityScorer {
 			}
 		}
 
-		if ( !$automated_run && abs( $old_score - $score ) > 1 ) {
+		if ( !$automated_run && abs( $old_score - $score ) > 0 ) {
 			$dbw->insert(
 				'pq_score_log',
 				[
