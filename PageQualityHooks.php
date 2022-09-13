@@ -20,6 +20,7 @@ class PageQualityHooks {
 		WikiPage $wikiPage, MediaWiki\User\UserIdentity $user, string $summary, int $flags,
 		MediaWiki\Revision\RevisionRecord $revisionRecord, MediaWiki\Storage\EditResult $editResult
 	) {
+		// @todo Check for null edits
 		if ( PageQualityScorer::isPageScoreable( $wikiPage->getTitle() ) ) {
 			list( $score, $responses ) = PageQualityScorer::runScorerForPage( $wikiPage->getTitle() );
 		}
