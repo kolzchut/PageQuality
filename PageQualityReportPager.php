@@ -91,6 +91,9 @@ class PageQualityReportPager extends TablePager {
 		if ( array_key_exists( $name, $page_stats ) ) {
 			return $page_stats[$name];
 		}
+
+		$score = !empty( $row->new_score ) ? $row->new_score : $row->score;
+
 		switch ( $name ) {
 			case 'pagename':
 				$formatted = $this->linkRenderer->makeKnownLink( Title::newFromRow( $row ) );
@@ -102,19 +105,15 @@ class PageQualityReportPager extends TablePager {
 				}
 				break;
 			case 'score':
-				if ( !empty( $row->new_score ) ) {
-					$formatted = $row->new_score;
-				} else {
-					$formatted = $row->score;
-				}
+				$formatted = $score;
 				break;
 			case 'old_score':
 				$formatted = $row->old_score;
 				break;
 			case 'status':
-				$status = $row->score > PageQualityScorer::getSetting( "red" )
+				$status = ( $score > PageQualityScorer::getSetting( "red" ) )
 					? "red"
-					: ( $row->score > 0 ? "yellow" : "green" );
+					: ( $score > 0 ? "yellow" : "green" );
 				$formatted = $this->msg( 'pq_report_page_status_' . $status )->escaped();
 				break;
 			default:
