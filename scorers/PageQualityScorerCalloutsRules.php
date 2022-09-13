@@ -45,6 +45,11 @@ class PageQualityScorerCalloutsRules extends PageQualityScorer {
 				while ( $previousNode instanceof DOMText ) {
 					$previousNode = $previousNode->previousSibling;
 				}
+
+				if ( !$previousNode ) {
+					return $response;
+				}
+
 				if ( in_array( $previousNode->tagName, [ "h1", "h2", "h3", "h4" ] ) ) {
 					$response['callout_section_begin'][] = [
 						"score" => self::getCheckList()['callout_section_begin']['severity'],
