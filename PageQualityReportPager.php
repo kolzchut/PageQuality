@@ -111,9 +111,6 @@ class PageQualityReportPager extends TablePager {
 			case 'old_score':
 				$formatted = $row->old_score;
 				break;
-			// case 'score_old':
-			// 	$formatted = $row->score_old;
-			// 	break;
 			case 'status':
 				$status = $row->score > PageQualityScorer::getSetting( "red" )
 					? "red"
@@ -214,11 +211,11 @@ class PageQualityReportPager extends TablePager {
 				break;
 			case "declines":
 				$info = $this->getScoreLogQuery( $from_date, $to_date );
-				$info['options']['HAVING'] = "score > $redScoreSetting AND old_score < $redScoreSetting";
+				$info['options']['HAVING'] = "new_score > $redScoreSetting AND old_score < $redScoreSetting";
 				break;
 			case "improvements":
 				$info = $this->getScoreLogQuery( $from_date, $to_date );
-				$info['options']['HAVING'] = "score < $redScoreSetting AND old_score > $redScoreSetting";
+				$info['options']['HAVING'] = "new_score < $redScoreSetting AND old_score > $redScoreSetting";
 				break;
 			default:
 				$info['tables'][] = 'pq_issues';
@@ -252,12 +249,12 @@ class PageQualityReportPager extends TablePager {
 	 * @return array
 	 * @throws Exception
 	 */
-	protected function getScoreLogQuery( ?string $from_date = null, ?string $to_date = null ): array {
+	public function getScoreLogQuery( ?string $from_date = null, ?string $to_date = null ): array {
 		$info = [
 			'tables' => [ 'log1' => 'pq_score_log', 'log2' => 'pq_score_log', 'page' ],
 			'fields' => [
 				'page.page_id', 'page.page_namespace', 'page.page_title',
-				'score' => 'log1.new_score', 'timestamp' => 'log1.timestamp',
+				'new_score' => 'log1.new_score', 'timestamp' => 'log1.timestamp',
 				'old_score' => 'log2.old_score', 'log2.timestamp'
 			],
 			'join_conds' => [
@@ -265,7 +262,7 @@ class PageQualityReportPager extends TablePager {
 				'page' => [ 'INNER JOIN', 'log1.page_id = page.page_id' ]
 			],
 			'options' => [
-				'ORDER BY' => [ 'timestamp ASC', 'log2.timestamp DESC' ],
+				'ORDER BY' => [ 'log1.timestamp ASC', 'log2.timestamp DESC' ],
 				'GROUP BY' => 'page.page_id',
 			]
 		];
@@ -274,7 +271,7 @@ class PageQualityReportPager extends TablePager {
 			$this->getConditionLimitByDates( 'log1.timestamp', $from_date, $to_date ),
 			$this->getConditionLimitByDates( 'log2.timestamp', $from_date, $to_date )
 		);
-		$info['conds'] = array_merge( $info['conds'], $dateConditions );
+		$info['conds'] = array_merge( (array)$info['conds'], $dateConditions );
 
 		return $info;
 	}
@@ -288,7 +285,7 @@ class PageQualityReportPager extends TablePager {
 	 *
 	 * @throws Exception
 	 */
-	protected function getConditionLimitByDates( string $fieldName, $from = null, $to = null ): array {
+	public function getConditionLimitByDates( string $fieldName, $from = null, $to = null ): array {
 		$db = $this->getDatabase();
 		$conds = [];
 		if ( !empty( $from ) ) {

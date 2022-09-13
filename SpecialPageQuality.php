@@ -6,6 +6,8 @@ class SpecialPageQuality extends SpecialPage {
 
 	/** @var null|string */
 	protected ?string $subpage = null;
+	/** @var PageQualityReportPager */
+	private PageQualityReportPager $pager;
 
 	/**
 	 * @inheritDoc
@@ -17,7 +19,7 @@ class SpecialPageQuality extends SpecialPage {
 	/**
 	 * @inheritDoc
 	 */
-	public function execute( $subpage ) {
+	public function execute( $subPage ) {
 		$linkDefs = [
 			'pq_reports' => 'Special:PageQuality/reports',
 			'pq_history' => 'Special:PageQuality/history',
@@ -30,19 +32,36 @@ class SpecialPageQuality extends SpecialPage {
 		}
 		$linkStr = $this->getContext()->getLanguage()->pipeList( $links );
 		$this->getOutput()->setSubtitle( $linkStr );
+		$report_type = substr( $subPage, strrpos( $subPage, '/' ) + 1 );
 
-		$this->subpage = $subpage;
-		if ( $subpage == "report" ) {
+		$opts = ( new FormOptions() );
+		$opts->add( 'article_content_type', '' );
+		$opts->add( 'article_type', '' );
+		$opts->add( 'from_date', '' );
+		$opts->add( 'to_date', '' );
+		$opts->fetchValuesFromRequest( $this->getRequest() );
+
+		if ( !empty( $from_date ) ) {
+			$opts->setValue( 'from_date', $from_date, true );
+		}
+		if ( !empty( $to_date ) ) {
+			$opts->setValue( 'to_date', $to_date, true );
+		}
+
+		$this->pager = new PageQualityReportPager( $this->getContext(), $this->getLinkRenderer(), $opts, $report_type );
+
+		$this->subpage = $subPage;
+		if ( $subPage == "report" ) {
 			$this->showReport();
-		} elseif ( $subpage == "settings" ) {
+		} elseif ( $subPage == "settings" ) {
 			$this->showSettings();
-		} elseif ( $subpage == "history" ) {
+		} elseif ( $subPage == "history" ) {
 			$this->showChangeHistoryForm();
 			$this->showChangeHistory();
-		} elseif ( $subpage == "reports" || $subpage == "" ) {
+		} elseif ( $subPage == "reports" || $subPage == "" ) {
 			$this->showStatistics();
-		} elseif ( strpos( $subpage, "reports" ) !== false ) {
-			$this->showListReport( substr( $subpage, strrpos( $subpage, '/' ) + 1 ) );
+		} elseif ( strpos( $subPage, "reports" ) !== false ) {
+			$this->showListReport( $report_type );
 		}
 	}
 
@@ -355,23 +374,7 @@ class SpecialPageQuality extends SpecialPage {
 			->prepareForm()
 			->displayForm( false );
 
-		$opts = ( new FormOptions() );
-		$opts->add( 'article_content_type', '' );
-		$opts->add( 'article_type', '' );
-		$opts->add( 'from_date', '' );
-		$opts->add( 'to_date', '' );
-		$opts->fetchValuesFromRequest( $this->getRequest() );
-
-		if ( !empty( $from_date ) ) {
-			$opts->setValue( 'from_date', $from_date, true );
-		}
-		if ( !empty( $to_date ) ) {
-			$opts->setValue( 'to_date', $to_date, true );
-		}
-
-		$pager = new PageQualityReportPager( $this->getContext(), $this->getLinkRenderer(), $opts, $report_type );
-
-		$this->getOutput()->addParserOutputContent( $pager->getFullOutput() );
+		$this->getOutput()->addParserOutputContent( $this->pager->getFullOutput() );
 	}
 
 	/**
@@ -415,40 +418,18 @@ class SpecialPageQuality extends SpecialPage {
 		$from = $this->getRequest()->getVal( 'from_date', null );
 		$to = $this->getRequest()->getVal( 'to_date', null );
 
-		$from_date = 0;
-		if ( !empty( $from ) ) {
-			$from_date = wfTimestamp(
-				TS_MW, DateTime::createFromFormat( 'Y-m-d', $from )->setTime( 0, 0 )->getTimestamp()
-			);
-		}
-
-		$to_date = wfTimestamp();
-		if ( !empty( $to ) ) {
-			$to_date = wfTimestamp(
-				TS_MW, DateTime::createFromFormat( 'Y-m-d', $to )->setTime( 0, 0 )->modify( '+1 days' )->getTimestamp()
-			);
-		}
-
-		if ( $to_date <= $from_date ) {
-			return;
-		}
-
+		// @todo check properly if to_date <= $from_date and return an appropriate error message
 		$dbr = wfGetDB( DB_REPLICA );
 
+		$query = $this->pager->getScoreLogQuery( $from, $to );
+
 		$res = $dbr->select(
-			[ 'pq_score_log AS pq_a', 'pq_score_log AS pq_b' ],
-			[
-				'pq_a.page_id as page_id', 'pq_b.page_id as page_id_b', 'pq_a.new_score AS new_score',
-				'pq_a.timestamp as pq_ats', 'pq_b.old_score AS old_score', 'pq_b.timestamp as pq_bts'
-			],
-			[
-				"pq_a.timestamp > $from_date AND pq_a.timestamp < $to_date",
-				"pq_b.timestamp > $from_date AND pq_b.timestamp < $to_date",
-				"pq_a.page_id = pq_b.page_id"
-			],
+			$query['tables'],
+			$query['fields'],
+			$query['conds'],
 			__METHOD__,
-			[ 'ORDER BY' => 'pq_ats ASC, pq_bts DESC', 'GROUP BY' => 'pq_a.page_id' ],
-			[ 'pq_b' => [ 'INNER JOIN', 'pq_a.page_id = pq_b.page_id' ] ]
+			$query['options'],
+			$query['join_conds']
 		);
 
 		// We might have multiple entries for the same page within the selected time frame, the
