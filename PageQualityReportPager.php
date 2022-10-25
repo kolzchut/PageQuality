@@ -305,7 +305,7 @@ class PageQualityReportPager extends TablePager {
 			return [ 'time' => [ 'log1.timestamp ASC', 'log2.timestamp DESC' ] ];
 		}
 
-		return 'timestamp';
+		return empty( $this->mSort ) ? 'score' : $this->mSort;
 	}
 
 	/**
@@ -319,6 +319,6 @@ class PageQualityReportPager extends TablePager {
 	 * @inheritDoc
 	 */
 	public function isFieldSortable( $field ): bool {
-		return in_array( $field, [ 'score', 'old_score', 'timestamp' ] );
+		return ( $field === 'score' );
 	}
 }
