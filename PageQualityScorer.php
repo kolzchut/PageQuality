@@ -199,6 +199,7 @@ abstract class PageQualityScorer {
 
 		// Unicode-compatibility - see:
 		// https://stackoverflow.com/questions/8218230/php-domdocument-loadhtml-not-encoding-utf-8-correctly
+		libxml_use_internal_errors( true );
 		$dom->loadHTML( '<?xml encoding="utf-8" ?>' . $text );
 		$dom->preserveWhiteSpace = false;
 		self::$dom = $dom;
