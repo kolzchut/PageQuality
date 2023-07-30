@@ -55,7 +55,7 @@
 				"resources/page_quality.js"
 			],
 			"styles": [
-				"resources/page_quality.css"
+				"resources/page_quality.less"
 			],
 			"dependencies": [
 				"jquery.tablesorter"

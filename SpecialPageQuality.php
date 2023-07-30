@@ -710,7 +710,6 @@ class SpecialPageQuality extends SpecialPage {
 					</div>
 				';
 				$html .= '
-				<div class="panel-body">
 						<ul class="list-group">
 				';
 				foreach ( $score_responses as $response ) {
@@ -723,7 +722,6 @@ class SpecialPageQuality extends SpecialPage {
 				}
 				$html .= '
 						</ul>
-					</div>
 					</div>
 				';
 			}

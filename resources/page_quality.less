@@ -1,0 +1,303 @@
+@import 'mediawiki.mixins';
+
+// @todo: use global variables or something so that it's easier to override the styles
+@gray-base: #000;
+@gray-light: lighten(@gray-base, 46.7%);
+@text-color: #202121;
+@link-color: @text-color;
+@font-size-base: 17px;
+@font-size-small: ceil((@font-size-base * 0.85));
+@line-height-base: 1.428571429;
+@line-height-computed: floor((@font-size-base * @line-height-base));
+@border-radius-base: 4px;
+@state-warning-text: #8a6d3b;
+@state-warning-bg: #fcf8e3;
+@state-warning-border: darken(spin(@state-warning-bg, -10), 5%);
+@state-danger-text: #a94442;
+@state-danger-bg: #f2dede;
+@state-danger-border: darken(spin(@state-danger-bg, -10), 5%);
+
+@list-group-bg: #fff;
+@list-group-border: #ddd;
+@list-group-border-radius: @border-radius-base;
+
+@panel-bg: #fff;
+@panel-body-padding: 15px;
+@panel-heading-padding: 10px 15px;
+@panel-border-radius: @border-radius-base;
+@panel-warning-text: @state-warning-text;
+@panel-warning-border: @state-warning-border;
+@panel-warning-heading-bg: @state-warning-bg;
+@panel-danger-text: @state-danger-text;
+@panel-danger-border: @state-danger-border;
+@panel-danger-heading-bg: @state-danger-bg;
+
+@badge-color: #fff;
+@badge-link-hover-color: #fff;
+@badge-bg: @gray-light;
+@badge-active-color: @link-color;
+@badge-active-bg: #fff;
+@badge-font-weight: bold;
+@badge-line-height: 1;
+@badge-border-radius: 10px;
+
+#pagequality-sidebar {
+	right: 0;
+	top: 0;
+	position: fixed;
+	z-index: 5;
+	max-width: 18em;
+	background-color: #fff;
+
+
+	& > header {
+		padding: 10px;
+	}
+
+	& > .inner {
+		background-color: #fff;
+		overflow-y: scroll;
+		height: ~'calc( 100vh - 5em )';
+		padding-right: 5px;
+	}
+
+	.panel-heading {
+		font-weight: bold;
+	}
+
+	.ellipsis {
+		user-select: none;
+	}
+
+	.panel-body {
+		padding: 0; /* Padding on padding on padding... */
+	}
+
+	.list-group {
+		margin-top: 0;
+	}
+}
+
+.badge {
+	display: inline-block;
+	min-width: 10px;
+	padding: 3px 7px;
+	font-size: @font-size-small;
+	font-weight: @badge-font-weight;
+	line-height: @badge-line-height;
+	color: @badge-color;
+	text-align: center;
+	white-space: nowrap;
+	vertical-align: middle;
+	background-color: @badge-bg;
+	border-radius: @badge-border-radius;
+
+	// Empty badges collapse automatically (not available in IE8)
+	&:empty {
+		display: none;
+	}
+
+	.list-group-item > & {
+		float: right;
+	}
+
+	.list-group-item > & + & {
+		margin-right: 5px;
+	}
+}
+
+
+.panel {
+	margin-bottom: @line-height-computed;
+	background-color: @panel-bg;
+	border: 1px solid transparent;
+	border-radius: @panel-border-radius;
+	.box-shadow(0 1px 1px rgba(0, 0, 0, .05));
+}
+
+// Panel contents
+.panel-body {
+	padding: @panel-body-padding;
+	&:extend(.clearfix all);
+}
+
+.border-top-radius(@radius) {
+	border-top-left-radius: @radius;
+	border-top-right-radius: @radius;
+}
+// Optional heading
+.panel-heading {
+	padding: @panel-heading-padding;
+	border-bottom: 1px solid transparent;
+	.border-top-radius((@panel-border-radius - 1));
+
+	> .dropdown .dropdown-toggle {
+		color: inherit;
+	}
+}
+
+// Within heading, strip any `h*` tag of its default margins for spacing.
+.panel-title {
+	margin-top: 0;
+	margin-bottom: 0;
+	font-size: ceil((@font-size-base * 1.125));
+	color: inherit;
+
+	> a,
+	> small,
+	> .small,
+	> small > a,
+	> .small > a {
+		color: inherit;
+	}
+}
+
+// List groups in panels
+//
+// By default, space out list group content from panel headings to account for
+// any kind of custom content between the two.
+
+.border-bottom-radius(@radius) {
+	border-bottom-right-radius: @radius;
+	border-bottom-left-radius: @radius;
+}
+
+.panel {
+	> .list-group,
+	> .panel-collapse > .list-group {
+		margin-bottom: 0;
+
+		.list-group-item {
+			border-width: 1px 0;
+			border-radius: 0;
+		}
+
+		// Add border top radius for first one
+		&:first-child {
+			.list-group-item:first-child {
+				border-top: 0;
+				.border-top-radius((@panel-border-radius - 1));
+			}
+		}
+
+		// Add border bottom radius for last one
+		&:last-child {
+			.list-group-item:last-child {
+				border-bottom: 0;
+				.border-bottom-radius((@panel-border-radius - 1));
+			}
+		}
+	}
+	> .panel-heading + .panel-collapse > .list-group {
+		.list-group-item:first-child {
+			.border-top-radius(0);
+		}
+	}
+}
+// Collapse space between when there's no additional content.
+.panel-heading + .list-group {
+	.list-group-item:first-child {
+		border-top-width: 0;
+	}
+}
+.list-group + .panel-footer {
+	border-top-width: 0;
+}
+
+.panel-group {
+	margin-bottom: @line-height-computed;
+
+	// Tighten up margin so it's only between panels
+	.panel {
+		margin-bottom: 0;
+		border-radius: @panel-border-radius;
+
+		+ .panel {
+			margin-top: 5px;
+		}
+	}
+
+	.panel-heading {
+		border-bottom: 0;
+	}
+
+	.panel-footer {
+		border-top: 0;
+	}
+}
+
+
+// Contextual variations
+.panel-warning {
+	.panel-variant(@panel-warning-border; @panel-warning-text; @panel-warning-heading-bg; @panel-warning-border);
+}
+.panel-danger {
+	.panel-variant(@panel-danger-border; @panel-danger-text; @panel-danger-heading-bg; @panel-danger-border);
+}
+
+.panel-variant(@border; @heading-text-color; @heading-bg-color; @heading-border) {
+	border-color: @border;
+
+	& > .panel-heading {
+		color: @heading-text-color;
+		background-color: @heading-bg-color;
+		border-color: @heading-border;
+
+		+ .panel-collapse > .panel-body {
+			border-top-color: @border;
+		}
+		.badge {
+			color: @heading-bg-color;
+			background-color: @heading-text-color;
+		}
+	}
+	& > .panel-footer {
+		+ .panel-collapse > .panel-body {
+			border-bottom-color: @border;
+		}
+	}
+}
+
+.list-group {
+	// No need to set list-style: none; since .list-group-item is block level
+	padding-left: 0; // reset padding because ul and ol
+	margin-bottom: 20px;
+}
+
+
+// Individual list items
+//
+// Use on `li`s or `div`s within the `.list-group` parent.
+
+.list-group-item {
+	position: relative;
+	display: block;
+	padding: 10px 15px;
+	// Place the border on the list items and negative margin up for better styling
+	margin-bottom: -1px;
+	background-color: @list-group-bg;
+	border: 1px solid @list-group-border;
+
+	// Round the first and last items
+	&:first-child {
+		.border-top-radius(@list-group-border-radius);
+	}
+	&:last-child {
+		margin-bottom: 0;
+		.border-bottom-radius(@list-group-border-radius);
+	}
+}
+
+
+// Custom content options
+//
+// Extra classes for creating well-formatted content within `.list-group-item`s.
+
+.list-group-item-heading {
+	margin-top: 0;
+	margin-bottom: 5px;
+}
+.list-group-item-text {
+	margin-bottom: 0;
+	line-height: 1.3;
+}
