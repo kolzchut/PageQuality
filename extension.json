@@ -1,9 +1,12 @@
 {
 	"name": "PageQuality",
-	"author": "Nischayn22, WikiWorks",
+	"author": [
+		"Nischayn22, WikiWorks",
+		"Dror S. [FFS] ([https://www.kolzchut.org.il Kol-Zchut])"
+	],
 	"url": "https://www.mediawiki.org/wiki/Extension:PageQuality",
 	"description": "Monitor and improve page quality",
-	"version": "0.2",
+	"version": "0.3",
 	"license-name": "GPL-2.0-or-later",
 	"type": "Special Page",
 	"AutoloadClasses": {
@@ -22,6 +25,9 @@
 	"GroupPermissions": {
 		"*": {
 			"viewpagequality": true
+		},
+		"pagequality-admin": {
+			"configpagequality": true
 		},
 		"sysop": {
 			"configpagequality": true
