@@ -613,10 +613,10 @@ class SpecialPageQuality extends SpecialPage {
 		$col = array_column( $all_checklist, "severity" );
 		array_multisort( $col, SORT_DESC, $all_checklist );
 		foreach ( $all_checklist as $type => $type_data ) {
-			if ( array_key_exists( $type, $scorer_stats ) ) {
 				$page = "Special:PageQuality/reports/$type";
 				$title = Title::newFromText( $page );
-				$link = $this->getLinkRenderer()->makeLink( $title, count( $scorer_stats[$type] ) );
+				$count = array_key_exists( $type, $scorer_stats ) ? count( $scorer_stats[$type] ) : 0;
+				$link = $this->getLinkRenderer()->makeLink( $title, $count );
 
 				$html .= '
 					<tr>
@@ -628,7 +628,6 @@ class SpecialPageQuality extends SpecialPage {
 						</td>
 					</tr>
 				';
-			}
 		}
 		$html .= '
 			</table>
