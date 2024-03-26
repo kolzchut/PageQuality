@@ -154,7 +154,7 @@ class PageQualityScorerReadability extends PageQualityScorer {
 	 * @return void
 	 */
 	public function evaluateParagraphs( string $str ) {
-		$sentences = preg_split( '/(?<=[.?!])\s+(?=[a-z])/i', $str );
+		$sentences = preg_split( '/(?<=[.?!])\s+(?=\w)/iu', $str );
 		foreach ( $sentences as $sentence ) {
 			$wc = self::str_word_count_utf8( $sentence );
 
