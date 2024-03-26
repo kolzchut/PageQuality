@@ -60,6 +60,9 @@ class PageQualityScorerReadability extends PageQualityScorer {
 		$blocked_expressions = self::getSetting( "blocked_expressions" );
 		if ( !empty( $blocked_expressions ) ) {
 			foreach ( $blocked_expressions as $blocked_expression ) {
+				if ( trim( $blocked_expression ) === '' ) {
+					continue;
+				}
 				$offset = 0;
 				while ( ( $offset = strpos( strip_tags( self::getText() ), $blocked_expression, $offset ) ) !== false ) {
 					$cut_off_start_offset = max( 0, $offset - 30 );
