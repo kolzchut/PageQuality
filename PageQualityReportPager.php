@@ -123,8 +123,6 @@ class PageQualityReportPager extends TablePager {
 			'options' => [ 'GROUP BY' => "page.page_id" ]
 		];
 
-		$redScoreSetting = PageQualityScorer::getSetting( "red" );
-
 		switch ( $this->report_type ) {
 			case "all":
 				break;
@@ -137,6 +135,9 @@ class PageQualityReportPager extends TablePager {
 			case "green_all":
 				$info['conds']['pq_score.status'] = PageQualityScorer::GREEN;
 				break;
+			default:
+				$info['tables'][] = 'pq_issues';
+				$info['join_conds']['pq_issues'] = [ 'JOIN', [ 'pq_score.page_id = pq_issues.page_id', 'pq_type' => $this->report_type ] ];
 		}
 
 		if ( \ExtensionRegistry::getInstance()->isLoaded( 'ArticleContentArea' ) &&
