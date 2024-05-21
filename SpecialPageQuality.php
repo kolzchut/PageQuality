@@ -6,8 +6,12 @@ class SpecialPageQuality extends SpecialPage {
 
 	/** @var null|string */
 	protected ?string $subpage = null;
-	/** @var PageQualityReportPager */
-	private PageQualityReportPager $pager;
+	/** @var TablePager */
+	private TablePager $pager;
+
+	private $validSubReports = [
+
+		];
 
 	/**
 	 * @inheritDoc
@@ -48,7 +52,11 @@ class SpecialPageQuality extends SpecialPage {
 			$opts->setValue( 'to_date', $to_date, true );
 		}
 
-		$this->pager = new PageQualityReportPager( $this->getContext(), $this->getLinkRenderer(), $opts, $report_type );
+		if ( in_array( $report_type, [ 'declines', 'improvements' ] ) ) {
+			$this->pager = new PageQualityChangesReportPager( $this->getContext(), $this->getLinkRenderer(), $opts, $report_type );
+		} else {
+			$this->pager = new PageQualityReportPager( $this->getContext(), $this->getLinkRenderer(), $opts, $report_type );
+		}
 
 		$this->subpage = $subPage;
 		if ( $subPage == "report" ) {
@@ -157,16 +165,14 @@ class SpecialPageQuality extends SpecialPage {
 					if ( array_key_exists( 'data_type', $check ) && $check['data_type'] == "list" ) {
 						$value_field = "value_blob";
 					}
-					$dbw->delete(
-						'pq_settings',
-						[ 'setting' => $type ],
-						__METHOD__
-					);
-					if ( $this->getRequest()->getVal( $type ) ) {
-						$dbw->insert(
+
+					$value = $this->getRequest()->getVal( $type );
+					if ( $value ) {
+						$dbw->upsert(
 							'pq_settings',
-							[ 'setting' => $type, $value_field => $this->getRequest()->getVal( $type ) ],
-							__METHOD__
+							[ 'setting' => $type, $value_field =>  $value ],
+							'setting',
+							[ $value_field =>  $value ?? null ],
 						);
 					}
 				}
@@ -178,26 +184,29 @@ class SpecialPageQuality extends SpecialPage {
 					if ( array_key_exists( 'data_type', $check ) && $check['data_type'] == "list" ) {
 						$value_field = "value_blob";
 					}
-					$dbw->delete(
+					$value = $this->getRequest()->getVal( $type );
+					$dbw->upsert(
 						'pq_settings',
-						[ 'setting' => $type ],
-						__METHOD__
-					);
-					$dbw->insert(
-						'pq_settings',
-						[ 'setting' => $type, $value_field => $this->getRequest()->getVal( $type ) ],
-						__METHOD__
+						[ 'setting' => $type, $value_field =>  $value ],
+						'setting',
+						[ $value_field =>  $value ?? null ],
 					);
 				}
 			}
 			if ( $this->getRequest()->getVal( 'regenerate_scores' ) == "yes" ) {
-				$dbw->delete( 'pq_issues', '*' );
+				$dbw->delete( 'pq_issues', IDatabase::ALL_ROWS );
 
+				$allowedNamespaces = \MediaWiki\MediaWikiServices::getInstance()->getMainConfig()->get( 'PageQualityNamespaces' );
+				$namespacesList = $dbr->makeList( $allowedNamespaces );
+
+				// The refresh job itself also checks namespace / article type,
+				// but to save on jobs created, let's limit the namespaces here as well
 				$res = $dbr->select(
 					[ 'page' ],
 					[ 'page_id' ],
 					[
 						'page_is_redirect' => 0,
+						"page_namespace IN ($namespacesList)"
 					],
 					__METHOD__,
 				);
@@ -212,7 +221,7 @@ class SpecialPageQuality extends SpecialPage {
 
 		$saved_settings_values = PageQualityScorer::getSettingValues();
 
-		$save_link = $wgScript . '?title=Special:PageQuality/settings&save=1';
+		$save_link = $this->getPageTitle( 'settings' )->getLocalURL( [ 'save' => 1 ] );
 		$tabPanels = [];
 
 		$tabPanels[] = $this->getGeneralSettingTab( $save_link, $saved_settings_values );
@@ -349,18 +358,23 @@ class SpecialPageQuality extends SpecialPage {
 			'label' => $this->msg( 'pg_history_form_to_date' ),
 			'default' => $to_date,
 		];
-		if ( $report_type == "all" ) {
+		if ( $report_type === "all" ) {
 			$this->getOutput()->setPageTitle( $this->msg( "total_scanned_pages" )->escaped() );
-		} elseif ( $report_type == "red_all" ) {
+		} elseif ( $report_type === "red_all" ) {
 			$this->getOutput()->setPageTitle( $this->msg( "red_scanned_pages" )->escaped() );
-		} elseif ( $report_type == "yellow_all" ) {
+		} elseif ( $report_type === "yellow_all" ) {
 			$this->getOutput()->setPageTitle( $this->msg( "yellow_scanned_pages" )->escaped() );
-		} elseif ( $report_type == "declines" ) {
+		} elseif ( $report_type === "green_all" ) {
+			$this->getOutput()->setPageTitle( $this->msg( "green_scanned_pages" )->escaped() );
+		} elseif ( $report_type === "declines" ) {
 			$this->getOutput()->setPageTitle( $this->msg( "declining_pages" )->escaped() );
-		} elseif ( $report_type == "improvements" ) {
+		} elseif ( $report_type === "improvements" ) {
 			$this->getOutput()->setPageTitle( $this->msg( "improving_pages" )->escaped() );
 		} else {
 			$all_checklist = PageQualityScorer::getAllChecksList();
+			if ( !isset($all_checklist[$report_type] ) ) {
+				throw new ErrorPageError( 'pq_reports', 'pq_report_error_no_report' );
+			}
 			$this->getOutput()->setPageTitle(
 				$this->msg( "scorer_type_count", $this->msg( $all_checklist[$report_type] ) )->escaped()
 			);
@@ -508,6 +522,19 @@ class SpecialPageQuality extends SpecialPage {
 
 		$dbr = wfGetDB( DB_REPLICA );
 
+		$yellowConditional = $dbr->conditional( [ 'status' => PageQualityScorer::YELLOW ], '1', 'NULL' );
+		$redConditional =  $dbr->conditional( [ 'status' => PageQualityScorer::RED ], '1', 'NULL' );
+		$greenConditional =  $dbr->conditional( [ 'status' => PageQualityScorer::GREEN ], '1', 'NULL' );
+
+		$pageCount = $dbr->selectRow(
+			"pq_score", [
+				'red' => "COUNT($redConditional)",
+				'yellow' => "COUNT($yellowConditional)",
+				'green' => "COUNT($greenConditional)",
+			],
+			[]
+		);
+
 		$res = $dbr->select(
 			"pq_issues",
 			'*',
@@ -537,16 +564,11 @@ class SpecialPageQuality extends SpecialPage {
 			}
 			$scorer_stats[$type][$page_id]++;
 		}
-		$red_page_count = count( array_filter( array_column( $page_stats, "score" ), static function ( $a ) {
-			return $a > PageQualityScorer::getSetting( "red" );
-		} ) );
-		$yellow_page_count = count( array_filter( array_column( $page_stats, "score" ), static function ( $a ) {
-			return $a <= PageQualityScorer::getSetting( "red" ) && $a > 0;
-		} ) );
 
 		$page = 'Special:PageQuality/reports/all';
 		$title = Title::newFromText( $page );
-		$link = $this->getLinkRenderer()->makeLink( $title, count( $page_stats ) );
+		$totalCount = $pageCount->red + $pageCount->yellow + $pageCount->green;
+		$link = $this->getLinkRenderer()->makeLink( $title, $totalCount );
 
 		$html = '
 			<table class="wikitable sortable">
@@ -571,7 +593,7 @@ class SpecialPageQuality extends SpecialPage {
 
 		$page = 'Special:PageQuality/reports/red_all';
 		$title = Title::newFromText( $page );
-		$link = $this->getLinkRenderer()->makeLink( $title, $red_page_count );
+		$link = $this->getLinkRenderer()->makeLink( $title, $pageCount->red );
 
 		$html .= '
 			<tr>
@@ -585,7 +607,7 @@ class SpecialPageQuality extends SpecialPage {
 
 		$page = 'Special:PageQuality/reports/yellow_all';
 		$title = Title::newFromText( $page );
-		$link = $this->getLinkRenderer()->makeLink( $title, $yellow_page_count );
+		$link = $this->getLinkRenderer()->makeLink( $title, $pageCount->yellow );
 
 		$html .= '
 			<tr>
@@ -598,13 +620,16 @@ class SpecialPageQuality extends SpecialPage {
 			</tr>
 		';
 
+		$titleValue = self::getTitleValueFor( $this->getName(), 'reports/green_all' );
+		$link = $this->getLinkRenderer()->makeKnownLink( $titleValue, $pageCount->green );
+
 		$html .= '
 			<tr>
 				<td>
 					' . $this->msg( 'green_scanned_pages' )->escaped() . '
 				</td>
 				<td>
-					' . ( count( $page_stats ) - $red_page_count - $yellow_page_count ) . '
+					' . $link . '
 				</td>
 			</tr>
 		';

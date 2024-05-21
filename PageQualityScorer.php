@@ -3,6 +3,8 @@
 use MediaWiki\Revision\RevisionRecord;
 
 abstract class PageQualityScorer {
+
+	public const GREEN = 0;
 	public const YELLOW = 1;
 	public const RED = 2;
 
@@ -170,10 +172,13 @@ abstract class PageQualityScorer {
 	 *
 	 * @return bool
 	 */
-	public static function isPageScoreable( $title ): bool {
-		if ( $title->isSpecialPage() ) {
+	public static function isPageScoreable( Title $title ): bool {
+		$allowedNamespaces = \MediaWiki\MediaWikiServices::getInstance()->getMainConfig()->get( 'PageQualityNamespaces' );
+
+		if ( !in_array( $title->getNamespace(), $allowedNamespaces ) ) {
 			return false;
 		}
+
 		$relevantArticleTypes = self::getSetting( 'article_types' );
 		if ( !empty( $relevantArticleTypes ) && ExtensionRegistry::getInstance()->isLoaded( 'ArticleType' ) ) {
 			$articleType = \MediaWiki\Extension\ArticleType\ArticleType::getArticleType( $title );
@@ -263,6 +268,20 @@ abstract class PageQualityScorer {
 		return [ $score, $responses ];
 	}
 
+	protected static function deleteDataForPage( Title $title ) {
+		$dbw = wfGetDB( DB_PRIMARY );
+		$dbw->delete(
+			'pq_score',
+			['page_id' => $title->getArticleID()],
+			__METHOD__
+		);
+		$dbw->delete(
+			'pq_issues',
+			['page_id' => $title->getArticleID()],
+			__METHOD__
+		);
+	}
+
 	/**
 	 * @param Title $title
 	 * @param string $page_html
@@ -274,6 +293,26 @@ abstract class PageQualityScorer {
 	public static function runScorerForPage(
 		Title $title, string $page_html = "", bool $automated_run = false
 	): array {
+		$dbw = wfGetDB( DB_PRIMARY );
+		$dbr = wfGetDB( DB_REPLICA );
+
+		// Retrieve the existing record
+		$res = $dbr->selectRow(
+			'pq_score',
+			['score', 'status'],
+			[ 'page_id' => $title->getArticleID() ]
+		);
+
+		// Delete existing records
+		if ( $res ) {
+			self::deleteDataForPage( $title );
+		}
+
+		// Return if not scoreable (and if it was previously scoreable, its data was deleted
+		if ( !self::isPageScoreable( $title ) ) {
+			return [ 0, [] ];
+		}
+
 		if ( empty( $page_html ) ) {
 			$pageObj = WikiPage::factory( $title );
 			$page_html = $pageObj->getContent( RevisionRecord::RAW )->getParserOutput( $title )->getText();
@@ -281,37 +320,15 @@ abstract class PageQualityScorer {
 		self::loadAllScoreres();
 		list( $score, $responses ) = self::runAllScoreres( $page_html );
 
-		$dbw = wfGetDB( DB_PRIMARY );
-		$dbr = wfGetDB( DB_REPLICA );
-		$res = $dbr->select(
-			'pq_issues',
-			'score',
-			[ 'page_id' => $title->getArticleID() ],
-			__METHOD__
-		);
-		$old_score = 0;
-		if ( $res->numRows() > 0 ) {
-			foreach ( $res as $row ) {
-				$old_score += $row->score;
-			}
-		}
-		$dbw->delete(
-			'pq_score',
-			[ 'page_id' => $title->getArticleID() ],
-			__METHOD__
-		);
-		$dbw->delete(
-			'pq_issues',
-			[ 'page_id' => $title->getArticleID() ],
-			__METHOD__
-		);
+		$old_score = $res ? $res->score : 0;
+		$old_status = $res ? $res->status : PageQualityScorer::GREEN;
 
-		if ( !self::isPageScoreable( $title ) ) {
-			return [ 0, [] ];
-		}
-
+		$hasRedIssue = false;
 		foreach ( $responses as $type => $type_responses ) {
 			foreach ( $type_responses as $response ) {
+				if ( $response['score'] === self::RED ) {
+					$hasRedIssue = true;
+				}
 				$dbw->insert(
 					'pq_issues',
 					[
@@ -326,7 +343,15 @@ abstract class PageQualityScorer {
 			}
 		}
 
-		if ( !$automated_run && abs( $old_score - $score ) > 0 ) {
+		$status = self::GREEN;
+		if ( $score > 0 ) {
+			$status = self::YELLOW;
+		}
+		if ( $hasRedIssue && $score > PageQualityScorer::getSetting( "red" ) ) {
+			$status = self::RED;
+		}
+
+		if ( $old_score <> $score || $status <> $old_status ) {
 			$dbw->insert(
 				'pq_score_log',
 				[
@@ -334,17 +359,24 @@ abstract class PageQualityScorer {
 					'revision_id' => $title->getLatestRevID(),
 					'new_score'   => $score,
 					'old_score'   => $old_score,
+					'new_status' => $status,
+					'old_status' => $old_status,
 					'timestamp' => $dbw->timestamp()
 				],
 				__METHOD__,
 				[ 'IGNORE' ]
 			);
 		}
+
+
+
+
 		$dbw->insert(
 			'pq_score',
 			[
-				'page_id'     => $title->getArticleID(),
-				'score'   => $score
+				'page_id' => $title->getArticleID(),
+				'score' => $score,
+				'status' => $status
 			],
 			__METHOD__,
 			[ 'IGNORE' ]
@@ -385,6 +417,21 @@ abstract class PageQualityScorer {
 		$xpath = new DOMXpath( $dom );
 		$expression = '//*[contains(concat(" ", normalize-space(@class), " "), " ' . $className . ' ")]';
 		return $xpath->query( $expression );
+	}
+
+	/**
+	 * Get a status code (0/1/2) and return the human equivalent (green/yellow/red)
+	 *
+	 * @param int|null $status
+	 * @return string
+	 */
+	public static function getHumanReadableStatus(?int $status ) {
+		switch ( $status ) {
+			case self::RED: return 'red';
+			case self::YELLOW: return 'yellow';
+			case self::GREEN: return 'green';
+			default: return 'unknown';
+		}
 	}
 
 	protected static function removeIgnoredElements() {

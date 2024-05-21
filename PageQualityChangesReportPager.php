@@ -4,7 +4,7 @@ use MediaWiki\Extension\ArticleContentArea\ArticleContentArea;
 use MediaWiki\Extension\ArticleType\ArticleType;
 use MediaWiki\Linker\LinkRenderer;
 
-class PageQualityReportPager extends TablePager {
+class PageQualityChangesReportPager extends TablePager {
 
 	/** @var LinkRenderer */
 	private LinkRenderer $linkRenderer;
@@ -23,6 +23,9 @@ class PageQualityReportPager extends TablePager {
 		IContextSource $context, LinkRenderer $linkRenderer, FormOptions $opts, string $report_type
 	) {
 		$this->report_type = $report_type;
+		if ( !in_array( $report_type, [ 'declines', 'improvements' ] ) ) {
+			throw new ErrorPageError( 'pq_reports', 'pq_report_error_no_report' );
+		}
 
 		parent::__construct( $context );
 
@@ -36,60 +39,36 @@ class PageQualityReportPager extends TablePager {
 	public function getFieldNames() {
 		static $headers = null;
 
-		PageQualityScorer::loadAllScoreres();
-		$all_checklist = PageQualityScorer::getAllChecksList();
-
-		$headers = [
-			'pagename' => 'pq_report_pagename',
-			'score' => 'pq_report_page_score',
-			// 'score_old' => 'pq_report_page_score_old',
-			'status' => 'pq_report_page_status',
-			'old_score' => 'pq_report_page_score_old',
-			'old_status' => 'pq_report_page_status_old',
-		];
-		$headers["timestamp"] = "pq_report_page_score_timestamp";
-		foreach ( $headers as &$msg ) {
-			$msg = $this->msg( $msg )->text();
+		if ( $headers == [] ) {
+			$headers = [
+				'pagename' => 'pq_report_pagename',
+				'status' => 'pq_report_page_status',
+				'old_status' => 'pq_report_page_status_old',
+				'new_score' => 'pq_report_page_score',
+				'old_score' => 'pq_report_page_score_old'
+			];
+			foreach ($headers as &$msg) {
+				$msg = $this->msg($msg)->text();
+			}
 		}
 
 		return $headers;
 	}
 
 	/**
-	 * It seems we totally ignore this function and use formatValueMy() in formatRow().
-	 * That seems wrong, but what do I know.
-	 * This function must still be implemented, even empty.
-	 *
-	 * @todo clean up this mess
-	 *
 	 * @inheritDoc
 	 */
 	public function formatValue( $name, $value ) {
-
-		$formatted = '';
-		$row = $this->mCurrentRow;
-
 		switch ( $name ) {
 			case 'pagename':
-				$formatted = $this->linkRenderer->makeKnownLink( Title::newFromRow( $row ) );
+				$formatted = $this->linkRenderer->makeKnownLink( Title::newFromRow( $this->mCurrentRow ) );
 				break;
-			case 'timestamp':
-				if ( !empty( $value ) ) {
-					$formatted = ( new DateTime() )->setTimestamp( wfTimestamp( TS_UNIX, $value ) )
-						->format( 'j M y' );
-				}
-				break;
-			case 'score':
-				$score = !empty( $row->new_score ) ? $row->new_score : $row->score;
-				$formatted = $score;
-				break;
-			case 'old_status':
 			case 'status':
+			case 'old_status':
 				$status = PageQualityScorer::getHumanReadableStatus( $value );
 				$formatted = $this->msg( 'pq_report_page_status_' . $status )->escaped();
 				break;
-			default:
-				$formatted = $value;
+			default: $formatted = $value;
 		}
 
 		return $formatted;
@@ -102,42 +81,10 @@ class PageQualityReportPager extends TablePager {
 	public function getQueryInfo(): array {
 		$from_date = $this->opts->getValue( 'from_date' );
 		$to_date = $this->opts->getValue( 'to_date' );
+		$info = $this->getScoreLogQuery( $from_date, $to_date );
 
-		// We also join on the page table, so that deleted pages do not show
-		// While doing that, we get enough fields for Title::newFromRow()
-		$info = [
-			'tables' => [ 'pq_score', 'pq_score_log', 'page' ],
-			'fields' => [
-				'page.page_id', 'page.page_namespace', 'page.page_title',
-				'pq_score.score', 'pq_score.status', 'old_score', 'pq_score_log.timestamp', 'MAX(pq_score_log.timestamp)'
-			],
-			'conds' => $this->getConditionLimitByDates( 'timestamp', $from_date, $to_date ),
-			// @fixme this doesn't necessarily select the correct log entry. It should always select the max and min entry
-			'join_conds' => [
-				"pq_score_log" => [
-					'LEFT JOIN',
-					[ 'pq_score.page_id = pq_score_log.page_id', 'pq_score.score = pq_score_log.new_score' ]
-				],
-				'page' => [ 'INNER JOIN', [ 'pq_score.page_id = page.page_id' ] ]
-			],
-			'options' => [ 'GROUP BY' => "page.page_id" ]
-		];
-
-		$redScoreSetting = PageQualityScorer::getSetting( "red" );
-
-		switch ( $this->report_type ) {
-			case "all":
-				break;
-			case "red_all":
-				$info['conds']['pq_score.status'] = PageQualityScorer::RED;
-				break;
-			case "yellow_all":
-				$info['conds']['pq_score.status'] = PageQualityScorer::YELLOW;
-				break;
-			case "green_all":
-				$info['conds']['pq_score.status'] = PageQualityScorer::GREEN;
-				break;
-		}
+		$havingCond = ( $this->report_type === 'declines' ) ? "new_status > old_status" :  "new_status < old_status";
+		$info['options']['HAVING'] = $havingCond;
 
 		if ( \ExtensionRegistry::getInstance()->isLoaded( 'ArticleContentArea' ) &&
 			 !empty( $this->opts->getValue( 'article_content_type' ) )
@@ -174,6 +121,7 @@ class PageQualityReportPager extends TablePager {
 				'old_score' => 'log2.old_score', 'log2.timestamp',
 				'new_status' => 'log1.new_status', 'old_status' => 'log2.old_status'
 			],
+			// @fixme this doesn't necessarily select the correct log entry. It should always select the max and min entry
 			'join_conds' => [
 				'log2' => [ 'LEFT JOIN', 'log1.page_id = log2.page_id' ],
 				'page' => [ 'INNER JOIN', 'log1.page_id = page.page_id' ]
@@ -219,7 +167,7 @@ class PageQualityReportPager extends TablePager {
 
 	/** @inheritDoc */
 	public function getIndexField() {
-		return empty( $this->mSort ) ? 'score' : $this->mSort;
+			return [ 'time' => [ 'log1.timestamp ASC', 'log2.timestamp DESC' ] ];
 	}
 
 	/**

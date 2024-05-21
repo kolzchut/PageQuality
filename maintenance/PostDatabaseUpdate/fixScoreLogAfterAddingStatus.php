@@ -3,6 +3,11 @@ namespace MediaWiki\Extension\PageQuality\Maintenance\PostDatabaseUpdate;
 
 use BatchRowIterator;
 use LoggedUpdateMaintenance;
+use PageQualityScorer;
+
+/**
+ * This script add the status information to old log records
+ */
 
 /**
  *
@@ -21,7 +26,7 @@ use LoggedUpdateMaintenance;
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  * http://www.gnu.org/copyleft/gpl.html
  *
- * @author Nischay Nahata
+ * @author Dror S.
  * @ingroup Maintenance
  */
 
@@ -31,12 +36,12 @@ if ( getenv( 'MW_INSTALL_PATH' ) ) {
 	require_once __DIR__ . '/../../../../maintenance/Maintenance.php';
 }
 
-$maintClass = migrateTimestampToMWFormat::class;
+$maintClass = fixScoreLogAfterAddingStatus::class;
 
 /**
  * Run automatically with update.php, once
  */
-class MigrateTimestampToMWFormat extends LoggedUpdateMaintenance {
+class fixScoreLogAfterAddingStatus extends LoggedUpdateMaintenance {
 
 	/**
 	 * @inheritDoc
@@ -50,14 +55,17 @@ class MigrateTimestampToMWFormat extends LoggedUpdateMaintenance {
 			[ 'id' ],
 			$this->getBatchSize()
 		);
-		$iterator->setFetchColumns( [ 'id', 'timestamp' ] );
+		$iterator->setFetchColumns( [ 'id', 'old_status', 'new_status', 'old_score', 'new_score' ] );
 
 		$processed = 0;
 		foreach ( $iterator as $batch ) {
 			foreach ( $batch as $row ) {
+				$old_status = $this->getStatusFromScoreOldAlgorithm( $row->old_score );
+				$new_status = $this->getStatusFromScoreOldAlgorithm( $row->new_score );
+
 				$dbw->update(
 					'pq_score_log',
-					[ 'timestamp2' => wfTimestamp( TS_MW, $row->timestamp ) ],
+					[ 'old_status' => $old_status, 'new_status' => $new_status ],
 					[ 'id' => $row->id ]
 				);
 
@@ -69,6 +77,18 @@ class MigrateTimestampToMWFormat extends LoggedUpdateMaintenance {
 		return true;
 	}
 
+	protected function getStatusFromScoreOldAlgorithm( $score ) {
+		$status = PageQualityScorer::GREEN;
+		if ( $score > 0 ) {
+			$status = PageQualityScorer::YELLOW;
+		}
+		if ( $score > PageQualityScorer::getSetting( "red" ) ) {
+			$status = PageQualityScorer::RED;
+		}
+
+		return $status;
+	}
+
 	/**
 	 * @inheritDoc
 	 */
@@ -78,7 +98,7 @@ class MigrateTimestampToMWFormat extends LoggedUpdateMaintenance {
 
 	public function __construct() {
 		parent::__construct();
-		$this->addDescription( "Migrates all historical records to use the MW Timestamp Format." );
+		$this->addDescription( "Migrates all historical records to include the status according to the old algorithm" );
 	}
 }
 

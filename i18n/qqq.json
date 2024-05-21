@@ -21,6 +21,7 @@
 	"pq_report_page_score": "Score",
 	"pq_report_page_score_timestamp": "Last Scored on",
 	"pq_report_page_score_old": "Previous Score",
+	"pq_report_page_status_old": "Previous Status",
 	"pq_report_page_status": "Status",
 	"pq_report_page_status_red": "Red",
 	"pq_report_page_status_yellow": "Yellow",

@@ -6,17 +6,28 @@
 	],
 	"url": "https://www.mediawiki.org/wiki/Extension:PageQuality",
 	"description": "Monitor and improve page quality",
-	"version": "0.3",
+	"version": "1.0a",
 	"license-name": "GPL-2.0-or-later",
 	"type": "Special Page",
 	"AutoloadClasses": {
 		"PageQualityHooks": "PageQualityHooks.php",
 		"PageQualityScorer": "PageQualityScorer.php",
 		"PageQualityReportPager": "PageQualityReportPager.php",
+		"PageQualityChangesReportPager": "PageQualityChangesReportPager.php",
 		"SpecialPageQuality": "SpecialPageQuality.php",
 		"PageQualityApi": "PageQualityApi.php",
 		"PageQualiyRefreshJob": "PageQualiyRefreshJob.php",
-		"MediaWiki\\Extensions\\PageQuality\\Maintenance\\PostDatabaseUpdate\\MigrateTimestampToMWFormat": "maintenance/PostDatabaseUpdate/migrateTimestampToMWFormat.php"
+		"MediaWiki\\Extension\\PageQuality\\Maintenance\\PostDatabaseUpdate\\MigrateTimestampToMWFormat": "maintenance/PostDatabaseUpdate/migrateTimestampToMWFormat.php",
+		"MediaWiki\\Extension\\PageQuality\\Maintenance\\PostDatabaseUpdate\\fixScoreLogAfterAddingStatus": "maintenance/PostDatabaseUpdate/fixScoreLogAfterAddingStatus.php"
+
+	},
+	"config": {
+		"PageQualityNamespaces": {
+			"value": [
+				0
+			],
+			"merge_strategy": "provide_default"
+		}
 	},
 	"AvailableRights": [
 		"viewpagequality",
@@ -27,9 +38,6 @@
 			"viewpagequality": true
 		},
 		"pagequality-admin": {
-			"configpagequality": true
-		},
-		"sysop": {
 			"configpagequality": true
 		}
 	},
@@ -81,5 +89,5 @@
 		"localBasePath": "",
 		"remoteExtPath": "PageQuality"
 	},
-	"manifest_version": 1
+	"manifest_version": 2
 }
