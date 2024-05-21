@@ -434,6 +434,29 @@ abstract class PageQualityScorer {
 		}
 	}
 
+	/**
+	 * @param int|null $severity
+	 * @return string
+	 */
+	public static function getHumanReadableSeverity(?int $severity ) {
+		switch ( $severity ) {
+			case self::RED: return 'red';
+			case self::YELLOW: return 'yellow';
+			default: return 'unknown';
+		}
+	}
+
+	/**
+	 * Messages used:
+	 *
+	 * @param int|null $severity
+	 * @return string
+	 */
+	public static function getLocalizedSeverity( ?int $severity ) {
+		$severity = self::getHumanReadableSeverity( $severity );
+		return wfMessage( "pq_severity_$severity" )->text();
+	}
+
 	protected static function removeIgnoredElements() {
 		$ignoredElements = self::getElementsByClassName( self::getDOM(), 'pagequality-ignore' );
 		foreach ( $ignoredElements as $element ) {

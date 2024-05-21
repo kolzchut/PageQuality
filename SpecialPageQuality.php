@@ -376,7 +376,10 @@ class SpecialPageQuality extends SpecialPage {
 				throw new ErrorPageError( 'pq_reports', 'pq_report_error_no_report' );
 			}
 			$this->getOutput()->setPageTitle(
-				$this->msg( "scorer_type_count", $this->msg( $all_checklist[$report_type] ) )->escaped()
+				$this->msg( "scorer_type_count",
+					$this->msg( $all_checklist[$report_type] )->text(),
+					PageQualityScorer::getLocalizedSeverity( $all_checklist[$report_type]['severity'] )
+				)->escaped()
 			);
 		}
 
@@ -642,11 +645,16 @@ class SpecialPageQuality extends SpecialPage {
 				$title = Title::newFromText( $page );
 				$count = array_key_exists( $type, $scorer_stats ) ? count( $scorer_stats[$type] ) : 0;
 				$link = $this->getLinkRenderer()->makeLink( $title, $count );
+				$text = $this->msg(
+					'scorer_type_count',
+					$this->msg( $type_data['name'] )->text(),
+					PageQualityScorer::getLocalizedSeverity( $type_data['severity'] )
+				)->escaped();
 
 				$html .= '
 					<tr>
 						<td>
-							' . $this->msg( "scorer_type_count", $this->msg( $type_data['name'] ) )->escaped() . '
+							' . $text . '
 						</td>
 						<td>
 							' . $link . '
