@@ -18,14 +18,13 @@ class PageQualityScorerEmphasisRules extends PageQualityScorer {
 			"severity" => PageQualityScorer::RED,
 			"default" => 5,
 		],
-		/*
 		"emphasis_gov_symbol" => [
 			"name" => "pag_scorer_emphasis_gov_symbol",
 			"description" => "emphasis_gov_sym_desc",
 			"check_type" => "exist",
 			"severity" => PageQualityScorer::YELLOW,
+			"disabled" => true
 		],
-		*/
 		"emphasis_line_length_min" => [
 			"name" => "pag_scorer_emphasis_line_length_min",
 			"description" => "pag_scorer_emphasis_length_min_desc",
@@ -70,7 +69,7 @@ class PageQualityScorerEmphasisRules extends PageQualityScorer {
 						"example" => mb_substr( $divNodes->item( $i )->nodeValue, 0, 50 )
 					];
 				}
-				if ( strpos( $divNodes->item( $i )->getAttribute( 'class' ), "emphasis-type-government" ) !== false ) {
+				if ( self::getCheckList()['emphasis_gov_symbol']['disabled'] === true || strpos( $divNodes->item( $i )->getAttribute( 'class' ), "emphasis-type-government" ) !== false ) {
 					$emphasis_gov = true;
 				} else {
 					$emphasis_gov = false;
