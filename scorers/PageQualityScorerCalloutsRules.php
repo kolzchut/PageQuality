@@ -7,13 +7,13 @@ class PageQualityScorerCalloutsRules extends PageQualityScorer {
 		"callout_gaps" => [
 			"name" => "pag_scorer_callout_gaps",
 			"description" => "callout_gaps_desc",
-			"check_type" => "exist",
+			"check_type" => "do_not_exist",
 			"severity" => PageQualityScorer::YELLOW,
 		],
 		"callout_section_begin" => [
 			"name" => "pag_scorer_callout_section_begin",
 			"description" => "callout_section_begin_desc",
-			"check_type" => "exist",
+			"check_type" => "do_not_exist",
 			"severity" => PageQualityScorer::YELLOW,
 		],
 		"callout_number" => [
