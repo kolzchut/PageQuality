@@ -47,29 +47,18 @@ class RecreateAllScores extends Maintenance {
 			's'
 		);
 		$this->addOption(
-			'namespace',
-			'Namespace constant to work on. Defaults to NS_MAIN',
-			false,
-			true,
-		);
-		$this->addOption(
-			'articletype',
-			'A comma-separated list of article types to work on. Depends on extension:ArticleType.',
-			false,
-			true
-		);
-		$this->addOption(
 			'reset',
-			'Delete all existing scores before starting again',
+			'Delete all existing data, including logs, before starting again.',
 		);
 	}
 
 	public function execute() {
+		$dbw = $this->getDB( DB_PRIMARY );
 		$dbr = $this->getDB( DB_REPLICA );
 
+		// $dbw->delete( 'pq_issues', IDatabase::ALL_ROWS );
 		if ( $this->hasOption( 'reset' ) ) {
-			$this->getDB( DB_PRIMARY )->delete( 'pq_issues', '*' );
-			$this->getDB( DB_PRIMARY )->delete( 'pq_score_log', '*' );
+			$dbw->delete( 'pq_score_log', IDatabase::ALL_ROWS );
 		}
 
 		$basicQuery = $this->getBasicQuery();
@@ -80,7 +69,8 @@ class RecreateAllScores extends Maintenance {
 			$query = $basicQuery;
 			$query['conds'][] = 'page_id > ' . $dbr->addQuotes( $startId );
 
-			$res = $dbr->select( $query['tables'],
+			$res = $dbr->select(
+				$query['tables'],
 				$query['fields'],
 				$query['conds'],
 				__METHOD__,
@@ -92,7 +82,7 @@ class RecreateAllScores extends Maintenance {
 			}
 			$totalNumRows = $totalNumRows + $res->numRows();
 			foreach ( $res as $row ) {
-				$title = Title::newFromRow( $row );
+				$title = Title::newFromID( $row->page_id );
 				PageQualityScorer::runScorerForPage( $title, "", true );
 				$startId = $row->page_id;
 			}
@@ -107,32 +97,12 @@ class RecreateAllScores extends Maintenance {
 	 * @return array
 	 */
 	private function getBasicQuery() {
-		$dbr = $this->getDB( DB_REPLICA );
-
-		$query = [];
-		$query[ 'tables' ] = [ 'page' ];
-		$query[ 'fields' ]  = [ 'page_id', 'page_namespace', 'page_title' ];
 		$query[ 'options' ] = [
 			'LIMIT' => $this->getBatchSize(),
 			'ORDER BY' => 'page_id'
 		];
-		$query[ 'join_conds' ] = [];
 
-		// Handle namespaces
-		if ( $this->hasOption( 'namespace' ) && !defined( $this->getOption( 'namespace' ) ) ) {
-			$this->fatalError( "Expected a namespace constant, `" . $this->getOption( 'namespace' ) . "` is unknown!" );
-		}
-		$namespace = $this->getOption( 'namespace' );
-		if ( $namespace ) {
-			$namespace = constant( $this->getOption( 'namespace' ) );
-		} else {
-			$namespace = NS_MAIN;
-		}
-		$query[ 'conds' ] = [
-			'page_namespace = ' . $dbr->addQuotes( $namespace )
-		];
-
-		return $query;
+		return array_merge_recursive( SpecialPageQuality::getQueryForAllPages(), $query );
 	}
 }
 

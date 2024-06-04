@@ -195,22 +195,15 @@ class SpecialPageQuality extends SpecialPage {
 			}
 			if ( $this->getRequest()->getVal( 'regenerate_scores' ) == "yes" ) {
 				$dbw->delete( 'pq_issues', IDatabase::ALL_ROWS );
-
-				$allowedNamespaces = \MediaWiki\MediaWikiServices::getInstance()->getMainConfig()->get( 'PageQualityNamespaces' );
-				$namespacesList = $dbr->makeList( $allowedNamespaces );
-
-				// The refresh job itself also checks namespace / article type,
-				// but to save on jobs created, let's limit the namespaces here as well
+				$query = self::getQueryForAllPages();
 				$res = $dbr->select(
-					[ 'page' ],
-					[ 'page_id' ],
-					[
-						'page_is_redirect' => 0,
-						"page_namespace IN ($namespacesList)"
-					],
+					$query['tables'],
+					$query['fields'],
+					$query['conds'],
 					__METHOD__,
+					[],
+					$query['join_conds']
 				);
-
 				$jobs = [];
 				foreach ( $res as $row ) {
 					$jobs[] = new PageQualiyRefreshJob( Title::newFromId( $row->page_id ) );
@@ -759,5 +752,29 @@ class SpecialPageQuality extends SpecialPage {
 			}
 		}
 		return $html;
+	}
+
+	static function getQueryForAllPages() {
+		$dbr = wfGetDB( DB_REPLICA );
+		$allowedNamespaces = \MediaWiki\MediaWikiServices::getInstance()->getMainConfig()->get( 'PageQualityNamespaces' );
+		$namespacesList = $dbr->makeList( $allowedNamespaces );
+
+		$query = [
+			'tables' => [ 'page' ],
+			'fields' => [ 'page_id' ],
+			'conds' => [
+				'page_is_redirect' => 0,
+				"page_namespace IN ($namespacesList)"
+			]
+		];
+		$relevantArticleTypes = PageQualityScorer::getSetting( 'article_types' );
+		if ( !empty( $relevantArticleTypes ) && ExtensionRegistry::getInstance()->isLoaded( 'ArticleType' ) ) {
+			$articleTypeQuery = ArticleType::getJoin( $relevantArticleTypes );
+			$query = array_merge_recursive( $query, $articleTypeQuery );
+		} else {
+			$query['join_conds'] = [];
+		}
+
+		return $query;
 	}
 }
