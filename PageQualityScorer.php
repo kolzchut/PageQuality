@@ -76,7 +76,14 @@ abstract class PageQualityScorer {
 	 * @return array
 	 */
 	public static function getCheckList(): array {
-		return static::$checksList;
+		$checkList = static::$checksList;
+		$enabledChecks = [];
+		foreach ( $checkList as $check => $value ) {
+			if ( !isset( $value['disabled'] ) || $value['disabled'] !== true ) {
+				$enabledChecks[$check] = $value;
+			}
+		}
+		return $enabledChecks;
 	}
 
 	public static function loadAllScoreres() {
@@ -175,6 +182,10 @@ abstract class PageQualityScorer {
 	public static function isPageScoreable( Title $title ): bool {
 		$allowedNamespaces = \MediaWiki\MediaWikiServices::getInstance()->getMainConfig()->get( 'PageQualityNamespaces' );
 
+		if ( $title->isRedirect() ) {
+			return false;
+		}
+
 		if ( !in_array( $title->getNamespace(), $allowedNamespaces ) ) {
 			return false;
 		}
@@ -185,9 +196,6 @@ abstract class PageQualityScorer {
 			if ( !in_array( $articleType, $relevantArticleTypes ) ) {
 				return false;
 			}
-		}
-		if ( $title->isRedirect() ) {
-			return false;
 		}
 
 		return true;
